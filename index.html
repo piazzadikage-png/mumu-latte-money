@@ -318,14 +318,8 @@
           <div class="form-group"><label>金額 (円)</label><input type="number" id="amount" placeholder="0" min="0"></div>
           <div class="form-group"><label>日付</label><input type="date" id="date"></div>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>店舗名</label>
-            <div style="display:flex;gap:6px">
-              <input type="text" id="store" placeholder="例: イオン、Amazon" style="flex:1">
-              <button type="button" onclick="searchStore()" style="flex-shrink:0;padding:0 12px;height:44px;border:1px solid var(--border);border-radius:8px;background:var(--bg);cursor:pointer;font-size:18px;" title="Google検索">🔍</button>
-            </div>
-          </div>
+        <div class="form-row full">
+          <div class="form-group"><label>店舗名</label><input type="text" id="store" placeholder="例: イオン、Amazon"></div>
         </div>
         <div class="form-row full">
           <div class="form-group"><label>メモ <span style="font-size:11px;color:var(--muted)">#ハッシュタグ使用可</span></label><input type="text" id="memo" placeholder="例: #旅行 #家族"></div>
