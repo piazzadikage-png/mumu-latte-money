@@ -1,1 +1,713 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>旅行プランナー</title>
+  <link rel="apple-touch-icon" href="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QBYRXhpZgAATU0AKgAAAAgAAgESAAMAAAABAAEAAIdpAAQAAAABAAAAJgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAABaKADAAQAAAABAAABagAAAAD/wAARCAFqAWgDASEAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9sAQwACAgICAgIDAgIDBAMDAwQGBAQEBAYHBgYGBgYHCAcHBwcHBwgICAgICAgICgoKCgoKDAwMDAwNDQ0NDQ0NDQ0N/9sAQwECAgIDAwMGAwMGDgkICQ4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4O/90ABAAX/9oADAMBAAIRAxEAPwD9WKK/Pz6AKKACigAooAKKACigAooAKKACigAooAKKACigAooAKKACigAooAKKACigAooAKKACigAooAKKAP/Q/Viivz8+gCigAooAKKACigAooAKKACigAooAKKACigAooAKKACigAooAKKACigAooAKKACigAooAKKACigD/0f1Yor8/PoAooAKKACigAooAKKACigAooAKKACigAooAKKACigAooAKKACigAooAKKACigAooAKKACigAooA/9L9WKK/Pz6AKKACigAooAKKACigAooAKKACigAooAKKACigAooAKKACigAooAKKACigAooAKKACigAooAKKAP/T/Viivz8+gCigAooAKKACigAooAKKACigAooAKKACigAooAKKACigAooAKKACigAooAKKACigAooAKKACigD/1P1Yor8/PoAooAKKACigAooAKKACigAooAKKACigAooAKKACigAooAKKACigAooAKKACigAooAKKACigAooA/9X9WKK/Pz6AKKACigAooAKKACigAooAKKACigAooAKKACigAooAKKACigAooAKKACigAooAKKACigAooAKKAP/W/Viivz8+gCigAooAKKACigAooAKKACigAooAKKADrwOaO+B1oAKKACigAooAOgyeAO9fKPxl/bS+AvwK8XQ+BvG+qXT6wUSS5gsIDP8AZFf7v2g5XaxHO1dzAdQOM74fDzrS5YEVKigryPpvQ9Z0rxJo1j4h0G5jvtN1O3jvLO5hOUlglUOkinuCpz61qYJxjvWTi07Mtaq6DFJUgFFABRQAUUAFFABRQAUUAf/X/Viivz8+gCigAooAKKACigAooAKKACigAo74oAUAk4HJPYdaq3F7Z2dxb2l3cQwXF45jt4ZXVHmYDcVjUnLEDnA7U7a2Woep8tfED9t39mT4a69eeF/E3jHdqunytDc2tjaXFz5UicMjPGhTcD1Ga8qk/wCCmf7LofZBceIbhQcb0058fk2DXfHK68o8zX4mDxEL2ufRPw6/aW+DnxM8FQfEHR9cXTdHutU/sWCTW1+xNJfbVYQR+ZgSOyuCNufTrXqsvjTwdDq83h+bXtKi1S3YLNZSXcSToxGQGjLbgSOgNctXD1IS5WjVTi1e50owy70wyEZDKQRj6jijrxWJduoUuD6H/wDXTsFj5l/ar/aM0T9m74Z3PiWbyrrxHfk2ehaaxBaW6YZEkiZz5MI+dieCdq/xV83fs1/B/wDZ/j+Fviib43+O/C/iD4ifFuzlHiK6uNRtpZrNLpS0cEDMx2yxOQ7svO4KBwtdjlWo4Xnpbtr5LqZQUJ1eWb0Rtf8ABP7xrqWneH/F37OPim6jutY+FmqS29pOjiRZtNllYRujAlWRZM7CuRsK1658fv2vPh/8EdRj8EadaXPjLx/fgLZeGNHBkmDt9z7U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dvzAE9SMVbpNK5zV8VFwbZ8af8EwfAjaB+zBF4pulljuvGet3eqyq7MQUiY28TKGGQGVMg5bd1zX6Cy6bbv96Jj+FclSjGUU2jHKqzhQjZ2ZnS6HZNn9wTVFvDVg3P2XPvz/AIV59TBwvpE96OYVF9sjXwzYg8W36n/Cpl8MWeDiFhnjtRDBxtawpZpO3xHzX+1hq2q/Dj9n7xV400PQtK1+70PyLxbbW4Y5rZEEmGmMbkB3jyNoBB54ruvgZ4+i+KXwj8K/ECP7OG1vT0nmS1bdFHMMpNGvoEdSNvbpXlZxh1CEZXPn82x/tJSptLo79T1eivn2eG9wooEFFABRQAUUAFFABRQB/9D9WKK/Pz6AKKACigAooAKKACigA759Ont9Px5qC3tbW03/AGSCGDzHMsnkose924LNtAyx7k81SlYabWqLO9x/E350vmSf32/On7Sf8z+8fPLuHmSf3m/M0m9z1Zvzo9pP+Z/eHtJ9w3v2ZvzpRJJ/fb8zR7Wp/M/vDnl3DzJP77fmaTfJn77fmaftan8z+8OeXcXzH/vN+dIzFwyuSwcYYMcgj0IOQQRwQeoo9rU6yf3i5pWtcjhVbeJILdVhjjG1I4gEVQOwVQAB9Kfuf+8fzo9tU/mf3j9pK1ri75P77fmaXzH/ALzfnQ6s39p/eHM+4m9/7zfnS+Y5/ib86XtJ/wAz+8OeXcrXVvbX0ElrfRR3MEow8U6iRGH+0rAgj60y0s7PT7dbTT7eG0t0JKwwIsca5OThFAAyeaHUnJWk7ibb3LNFQDYUUCCigAooAKBknaBknoB1P0HegCSWKWFtsqMmefmGKjp2admC1VwopAf/0f1Yor8/PoAooAKKACigAooAKKACigAooAKKACigAooAKKACigAooAKKACigAooAKKACigAooAK19Ot5o5kuDs2kEAh1DDIxuGe65yKumry0FLYu39nMYVtY2VyH37i20AbQMYYlsnqT0yeK551KOyNjIPbn9a1rwaZNP4RlFc5Z/9L9WKK/Pz6AKKACigAooAKKACigAooAKKACigAooAKKACigAooAKKACigAooAKKACigAooAKKAD6GnxLHv3OQgHzA7dw3DlRj3PFOO4mXtSnS8fzGZS4AXYExxjJOeT97IxWdVSd3e4oqysFFQUf//T/Viivz8+gCigAooAKKACigAooAKKACigAooAKKACigAooAKKACigAooAKKACigAooAKKACigAoBwQaADnAHpRQAUUAf/1P1Yor8/PoAooAKKACigAooAKKACigAooAKKACigAooAKKACigAooAKKACigAooAKKACigAooAKKACigAooA/9k=">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0f1b2d; color: #e8f0fe; font-family: 'Hiragino Sans', 'Noto Sans JP', sans-serif; min-height: 100vh; }
+    input, select, button, textarea { font-family: inherit; }
+    input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.5; }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+    .screen { min-height: 100vh; background: linear-gradient(135deg, #0f1b2d 0%, #1a2f4a 50%, #0f1b2d 100%); padding-bottom: 60px; }
+    .sticky-header { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.08); padding: 16px 20px 0; position: sticky; top: 0; z-index: 100; }
+    .inner { max-width: 520px; margin: 0 auto; }
+    .content { max-width: 520px; margin: 0 auto; padding: 20px 16px 0; }
+    .card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 18px 20px; margin-bottom: 12px; cursor: pointer; transition: background 0.2s; }
+    .card:hover { background: rgba(255,255,255,0.09); }
+    .form-box { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 20px; margin-top: 16px; }
+    .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+    .field label { font-size: 11px; color: #5a7a9a; }
+    input[type="text"], input[type="date"], select {
+      width: 100%; padding: 10px 14px; border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.07);
+      color: #e8f0fe; font-size: 14px; outline: none; color-scheme: dark;
+    }
+    input[type="text"]::placeholder { color: #4a6080; }
+    .btn-primary { width: 100%; padding: 13px; border-radius: 10px; border: none; background: linear-gradient(135deg, #4A90D9, #7B68EE); color: white; font-weight: 700; font-size: 14px; cursor: pointer; }
+    .btn-ghost { padding: 13px 18px; border-radius: 10px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); color: #8ba3c8; cursor: pointer; font-size: 14px; }
+    .btn-add { width: 100%; padding: 14px; background: rgba(74,144,217,0.15); border: 1.5px dashed rgba(74,144,217,0.5); border-radius: 14px; color: #4A90D9; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 16px; }
+    .tab-btn { flex: 1; padding: 10px 0; background: none; border: none; border-bottom: 2px solid transparent; color: #5a7a9a; font-weight: 400; font-size: 14px; cursor: pointer; transition: all 0.2s; }
+    .tab-btn.active { border-bottom-color: #4A90D9; color: #e8f0fe; font-weight: 700; }
+    .item-row { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px; transition: opacity 0.2s; }
+    .item-row.done { opacity: 0.5; }
+    .check-circle { width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.25); background: transparent; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+    .check-circle.checked { border-color: #4A90D9; background: #4A90D9; }
+    .check-square { width: 22px; height: 22px; border-radius: 6px; border: 2px solid rgba(255,255,255,0.25); background: transparent; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+    .check-square.checked { border-color: #5BAD8F; background: #5BAD8F; }
+    .member-badge { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: white; flex-shrink: 0; }
+    .icon-btn { background: none; border: none; color: #4a6080; cursor: pointer; font-size: 15px; padding: 2px 4px; }
+    .filter-row { display: flex; gap: 8px; margin-bottom: 16px; }
+    .filter-row select { font-size: 13px; }
+    .progress-bar { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 2px; transition: width 0.4s; }
+    .ownership-btn { flex: 1; padding: 10px 8px; border-radius: 12px; border: none; cursor: pointer; font-size: 13px; transition: all 0.18s; background: rgba(255,255,255,0.05); outline: 1.5px solid rgba(255,255,255,0.1); color: #8ba3c8; }
+    .ownership-btn.active-owned { background: rgba(91,173,143,0.2); outline-color: #5BAD8F; color: #5BAD8F; font-weight: 700; }
+    .ownership-btn.active-buy { background: rgba(232,168,56,0.2); outline-color: #E8A838; color: #E8A838; font-weight: 700; }
+    .mode-btn { flex: 1; padding: 9px 8px; border-radius: 10px; border: none; cursor: pointer; font-size: 13px; background: rgba(255,255,255,0.05); outline: 1.5px solid rgba(255,255,255,0.1); color: #8ba3c8; transition: all 0.18s; }
+    .mode-btn.active { background: rgba(74,144,217,0.2); outline-color: #4A90D9; color: #74b4f7; font-weight: 700; }
+    .login-screen { min-height: 100vh; background: linear-gradient(135deg,#0f1b2d 0%,#1a2f4a 50%,#0f1b2d 100%); display: flex; align-items: center; justify-content: center; padding: 24px; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.65); backdrop-filter: blur(4px); z-index: 200; display: flex; align-items: flex-end; justify-content: center; }
+    .modal-sheet { background: #162438; border-radius: 24px 24px 0 0; width: 100%; max-width: 520px; max-height: 88vh; overflow-y: auto; padding: 12px 20px 48px; }
+    .modal-handle { width: 40px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; margin: 0 auto 20px; }
+    .qty-row { display: flex; align-items: center; gap: 16px; }
+    .qty-btn { width: 36px; height: 36px; border-radius: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); color: #e8f0fe; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  </style>
+</head>
+<body>
+<div id="app"></div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, collection, doc, onSnapshot, setDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+// ═══════════════════════════════════════
+// Firebase設定
+// ═══════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyB3smRm_OnFMLpWOUNQT9KIpddkogWnfNE",
+  authDomain: "travel-planner-775f3.firebaseapp.com",
+  projectId: "travel-planner-775f3",
+  storageBucket: "travel-planner-775f3.firebasestorage.app",
+  messagingSenderId: "605872979305",
+  appId: "1:605872979305:web:d3f37b4885877912f691f8",
+};
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+const provider = new GoogleAuthProvider();
+
+// ═══════════════════════════════════════
+// データ定義
+// ═══════════════════════════════════════
+const COLORS  = ["#4A90D9","#7B68EE","#E07B54","#E8A838","#5BAD8F","#D95B8A","#4ABFB0"];
+const MEMBERS = [
+  { id: "naoki", label: "naoki", color: "#4A90D9" },
+  { id: "yumi",  label: "yumi",  color: "#7B68EE" },
+];
+const defaultCategories = () => ({
+  todo: [
+    { id: "transport",     label: "交通",           color: "#4A90D9" },
+    { id: "accommodation", label: "宿泊",           color: "#7B68EE" },
+    { id: "activity",      label: "アクティビティ", color: "#E07B54" },
+    { id: "food",          label: "グルメ",         color: "#E8A838" },
+    { id: "other",         label: "その他",         color: "#5BAD8F" },
+  ],
+  item: [
+    { id: "clothes",     label: "衣類",     color: "#4A90D9" },
+    { id: "toiletry",    label: "洗面用具", color: "#7B68EE" },
+    { id: "electronics", label: "電子機器", color: "#E07B54" },
+    { id: "document",    label: "書類",     color: "#E8A838" },
+    { id: "medicine",    label: "医薬品",   color: "#5BAD8F" },
+    { id: "other",       label: "その他",   color: "#888"    },
+  ],
+});
+
+let _id = Date.now();
+const uid = () => `id_${_id++}`;
+const fmt = (d) => { if(!d) return "日程未定"; const [y,m,day]=d.split("-"); return `${y}年${+m}月${+day}日`; };
+
+// ═══════════════════════════════════════
+// グローバル状態
+// ═══════════════════════════════════════
+let user  = null;
+let trips = [];
+let selectedTripId = null;
+
+// 旅行一覧フォーム
+let listForm = { name:"", dateFrom:"", dateTo:"", copyFrom:"", open:false };
+
+// 旅行詳細
+let detail = {
+  tab: "todo",
+  showForm: false, showCatMgr: false, showTripEdit: false,
+  editId: null,
+  filterMember: "all_members", filterCat: "all", filterOwnership: "all",
+  newName:"", newDateFrom:"", newDateTo:"",   // 旅行名編集用
+  form: { text:"", category:"", member:"naoki", note:"", qty:1, ownership:"owned" },
+  catLabel: "",
+  itemMode: "new", existingSearch: "",
+  saving: false,
+};
+
+// ═══════════════════════════════════════
+// Firebase操作
+// ═══════════════════════════════════════
+const saveTrip   = (t) => setDoc(doc(db,"trips",t.id), {...t, updatedAt:serverTimestamp()});
+const removeTrp  = (id) => deleteDoc(doc(db,"trips",id));
+
+onAuthStateChanged(auth, (u) => {
+  user = u;
+  if (u) startListener();
+  render();
+});
+
+let unsub = null;
+function startListener() {
+  if (unsub) return;
+  unsub = onSnapshot(collection(db,"trips"), (snap) => {
+    trips = snap.docs.map(d => ({...d.data(), id:d.id}))
+      .sort((a,b) => (a.createdAt?.seconds||0) - (b.createdAt?.seconds||0));
+    render();
+  });
+}
+
+// ═══════════════════════════════════════
+// レンダリング
+// ═══════════════════════════════════════
+function render() {
+  const app = document.getElementById("app");
+  if (!user) { app.innerHTML = loginHTML(); bindLogin(); return; }
+  if (selectedTripId) {
+    const trip = trips.find(t=>t.id===selectedTripId);
+    if (!trip) { selectedTripId=null; render(); return; }
+    app.innerHTML = detailHTML(trip);
+    bindDetail(trip);
+  } else {
+    app.innerHTML = listHTML();
+    bindList();
+  }
+}
+
+// ═══════════════════════════════════════
+// ログイン画面
+// ═══════════════════════════════════════
+function loginHTML() {
+  return `<div class="login-screen">
+    <div style="max-width:360px;width:100%;text-align:center;">
+      <div style="font-size:52px;margin-bottom:16px;">🧳</div>
+      <div style="font-size:24px;font-weight:800;margin-bottom:8px;">旅行プランナー</div>
+      <div style="font-size:14px;color:#8ba3c8;margin-bottom:40px;">naoki & yumi の旅行管理アプリ</div>
+      <button id="loginBtn" style="width:100%;padding:14px 20px;border-radius:14px;border:none;cursor:pointer;background:rgba(255,255,255,0.12);color:#e8f0fe;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:10px;">
+        <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.35-8.16 2.35-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        Googleでログイン
+      </button>
+      <div style="font-size:12px;color:#4a6080;margin-top:16px;">許可されたアカウントのみ利用できます</div>
+    </div>
+  </div>`;
+}
+function bindLogin() {
+  document.getElementById("loginBtn").onclick = () => signInWithPopup(auth, provider).catch(()=>{});
+}
+
+// ═══════════════════════════════════════
+// 旅行一覧
+// ═══════════════════════════════════════
+function listHTML() {
+  const cards = trips.map(t => {
+    const todoDone   = (t.todos||[]).filter(x=>x.done).length;
+    const itemPacked = (t.items||[]).filter(x=>x.packed).length;
+    const tLen = (t.todos||[]).length, iLen = (t.items||[]).length;
+    return `<div class="card" data-tripid="${t.id}">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;">
+        <div style="flex:1;">
+          <div style="font-size:17px;font-weight:700;margin-bottom:4px;">${esc(t.name)}</div>
+          <div style="font-size:12px;color:#8ba3c8;">${t.dateFrom&&t.dateTo?fmt(t.dateFrom)+' 〜 '+fmt(t.dateTo):t.dateFrom?fmt(t.dateFrom):'日程未定'}</div>
+          <div style="display:flex;gap:16px;margin-top:12px;">
+            <div style="flex:1;"><div style="font-size:10px;color:#5a7a9a;margin-bottom:4px;">タスク ${todoDone}/${tLen}</div><div class="progress-bar" style="width:80px;"><div class="progress-fill" style="width:${tLen?(todoDone/tLen*100):0}%;background:linear-gradient(90deg,#4A90D9,#7B68EE);"></div></div></div>
+            <div style="flex:1;"><div style="font-size:10px;color:#5a7a9a;margin-bottom:4px;">荷物 ${itemPacked}/${iLen}</div><div class="progress-bar" style="width:80px;"><div class="progress-fill" style="width:${iLen?(itemPacked/iLen*100):0}%;background:linear-gradient(90deg,#E07B54,#E8A838);"></div></div></div>
+          </div>
+        </div>
+        <button class="del-trip icon-btn" data-tripid="${t.id}" style="color:#e07070;font-size:13px;margin-left:12px;">削除</button>
+      </div>
+    </div>`;
+  }).join("");
+
+  const formHTML = listForm.open ? `
+    <div class="form-box">
+      <div style="font-weight:700;font-size:15px;margin-bottom:16px;">新しい旅行</div>
+      ${trips.length>0?`<div class="field"><label>既存の旅行からコピー（任意）</label><select id="lf-copy"><option value="">コピーしない</option>${trips.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join("")}</select></div>`:""}
+      <div class="field"><label>旅行名</label><input type="text" id="lf-name" placeholder="例：宮古島旅行2027" value="${esc(listForm.name)}"></div>
+      <div style="display:flex;gap:10px;">
+        <div class="field" style="flex:1;"><label>出発日</label><input type="date" id="lf-from" value="${listForm.dateFrom}"></div>
+        <div class="field" style="flex:1;"><label>帰着日</label><input type="date" id="lf-to" value="${listForm.dateTo}"></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:4px;">
+        <button class="btn-primary" id="lf-submit" style="flex:1;">${listForm.copyFrom?"コピーして作成":"作成"}</button>
+        <button class="btn-ghost" id="lf-cancel">キャンセル</button>
+      </div>
+    </div>` : `<button class="btn-add" id="lf-open">＋ 新しい旅行を追加</button>`;
+
+  return `<div class="screen">
+    <div class="sticky-header">
+      <div class="inner">
+        <div style="display:flex;align-items:center;gap:12px;padding-bottom:16px;">
+          <span style="font-size:28px;">🧳</span>
+          <div style="flex:1;"><div style="font-size:20px;font-weight:800;">旅行プランナー</div><div style="font-size:12px;color:#8ba3c8;margin-top:2px;">${user.email}</div></div>
+          <button id="logoutBtn" class="btn-ghost" style="font-size:12px;padding:6px 12px;">ログアウト</button>
+        </div>
+      </div>
+    </div>
+    <div class="content">
+      ${trips.length===0&&!listForm.open?'<div style="text-align:center;padding:40px 0;color:#4a6080;font-size:14px;">旅行がまだありません</div>':""}
+      ${cards}
+      ${formHTML}
+    </div>
+  </div>`;
+}
+
+function bindList() {
+  document.getElementById("logoutBtn")?.addEventListener("click", ()=>signOut(auth));
+  document.getElementById("lf-open")?.addEventListener("click", ()=>{ listForm={name:"",dateFrom:"",dateTo:"",copyFrom:"",open:true}; render(); });
+  document.getElementById("lf-cancel")?.addEventListener("click", ()=>{ listForm.open=false; render(); });
+
+  // 入力値をリアルタイムでstateに保存（DOMを再描画しない）
+  document.getElementById("lf-name")?.addEventListener("input", e=>{ listForm.name=e.target.value; });
+  document.getElementById("lf-from")?.addEventListener("change", e=>{ listForm.dateFrom=e.target.value; });
+  document.getElementById("lf-to")?.addEventListener("change",   e=>{ listForm.dateTo=e.target.value; });
+  document.getElementById("lf-copy")?.addEventListener("change",  e=>{ listForm.copyFrom=e.target.value; });
+
+  document.getElementById("lf-submit")?.addEventListener("click", async ()=>{
+    const name = document.getElementById("lf-name")?.value.trim();
+    if (!name) return;
+    const dateFrom = document.getElementById("lf-from")?.value || "";
+    const dateTo   = document.getElementById("lf-to")?.value   || "";
+    const copyFrom = document.getElementById("lf-copy")?.value || "";
+    const id = `trip_${uid()}`;
+    if (copyFrom) {
+      const src = trips.find(t=>t.id===copyFrom);
+      if (src) await saveTrip({id, name, dateFrom, dateTo,
+        categories: JSON.parse(JSON.stringify(src.categories||defaultCategories())),
+        todos: (src.todos||[]).map(t=>({...t,id:uid(),done:false})),
+        items: (src.items||[]).map(i=>({...i,id:uid(),packed:false})),
+        createdAt: serverTimestamp(),
+      });
+    } else {
+      await saveTrip({id, name, dateFrom, dateTo, categories:defaultCategories(), todos:[], items:[], createdAt:serverTimestamp()});
+    }
+    listForm = {name:"",dateFrom:"",dateTo:"",copyFrom:"",open:false};
+    render();
+  });
+
+  document.querySelectorAll(".card[data-tripid]").forEach(el => {
+    el.addEventListener("click", (e) => {
+      if (e.target.closest(".del-trip")) return;
+      const id = el.dataset.tripid;
+      const t  = trips.find(x=>x.id===id);
+      if (!t) return;
+      selectedTripId = id;
+      detail = { tab:"todo", showForm:false, showCatMgr:false, showTripEdit:false, editId:null,
+        filterMember:"all_members", filterCat:"all", filterOwnership:"all",
+        newName:t.name, newDateFrom:t.dateFrom||"", newDateTo:t.dateTo||"",
+        form:{text:"",category:"",member:"naoki",note:"",qty:1,ownership:"owned",dueDate:""},
+        catLabel:"", itemMode:"new", existingSearch:"", saving:false };
+      render();
+    });
+  });
+
+  document.querySelectorAll(".del-trip").forEach(el => {
+    el.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const id = el.dataset.tripid;
+      const t  = trips.find(x=>x.id===id);
+      if (t && confirm(`「${t.name}」を削除しますか？`)) await removeTrp(id);
+    });
+  });
+}
+
+// ═══════════════════════════════════════
+// 旅行詳細
+// ═══════════════════════════════════════
+function detailHTML(trip) {
+  const todos = trip.todos||[], items = trip.items||[];
+  const cats  = (trip.categories||defaultCategories())[detail.tab]||[];
+  const getCat = id => cats.find(c=>c.id===id)||{label:id,color:"#888"};
+  const getMem = id => MEMBERS.find(m=>m.id===id)||MEMBERS[0];
+
+  const todoDone=todos.filter(t=>t.done).length, itemPacked=items.filter(i=>i.packed).length;
+  const tLen=todos.length, iLen=items.length;
+
+  // フィルター済みリスト
+  const ftodos = todos.filter(t=>
+    (detail.filterMember==="all_members"||t.member===detail.filterMember)&&
+    (detail.filterCat==="all"||t.category===detail.filterCat));
+  const fitems = items.filter(i=>
+    (detail.filterMember==="all_members"||i.member===detail.filterMember)&&
+    (detail.filterCat==="all"||i.category===detail.filterCat)&&
+    (detail.filterOwnership==="all"||i.ownership===detail.filterOwnership));
+
+  // 旅行名編集フォーム
+  const tripEditHTML = detail.showTripEdit ? `
+    <div class="form-box" style="margin-bottom:12px;">
+      <div class="field"><label>旅行名</label><input type="text" id="te-name" value="${esc(detail.newName)}"></div>
+      <div style="display:flex;gap:10px;">
+        <div class="field" style="flex:1;"><label>出発日</label><input type="date" id="te-from" value="${detail.newDateFrom}"></div>
+        <div class="field" style="flex:1;"><label>帰着日</label><input type="date" id="te-to" value="${detail.newDateTo}"></div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-primary" id="te-save" style="flex:1;padding:10px;font-size:13px;">保存</button>
+        <button class="btn-ghost" id="te-cancel" style="padding:10px 14px;font-size:13px;">キャンセル</button>
+      </div>
+    </div>` : "";
+
+  // カテゴリー管理
+  const catMgrHTML = detail.showCatMgr ? `
+    <div class="form-box">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <span style="font-weight:700;font-size:15px;">カテゴリー管理</span>
+        <button class="icon-btn" id="cat-close" style="font-size:18px;">✕</button>
+      </div>
+      ${cats.map(c=>`<div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.05);border-radius:10px;padding:9px 12px;margin-bottom:8px;border:1px solid rgba(255,255,255,0.08);">
+        <div style="width:10px;height:10px;border-radius:50%;background:${c.color};flex-shrink:0;"></div>
+        <span style="flex:1;font-size:14px;">${esc(c.label)}</span>
+        <button class="del-cat icon-btn" data-catid="${c.id}" style="color:#e07070;font-size:12px;">削除</button>
+      </div>`).join("")}
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <input type="text" id="cat-input" placeholder="新しいカテゴリー名..." style="flex:1;">
+        <button class="btn-primary" id="cat-add" style="width:auto;padding:10px 16px;white-space:nowrap;">追加</button>
+      </div>
+    </div>` : "";
+
+  // 追加/編集フォーム（モーダル）
+  let formHTML = "";
+  if (detail.showForm) {
+    const curCat = detail.form.category || cats[0]?.id || "";
+    let innerHTML = "";
+    if (detail.tab==="item"&&!detail.editId) {
+      const seen=new Set(), pastItems=[];
+      trips.forEach(t=>{ (t.items||[]).forEach(i=>{ if(!seen.has(i.text)){seen.add(i.text);pastItems.push({...i,_from:t.name,_cur:t.id===trip.id});} }); });
+      const filtered = pastItems.filter(i=>!detail.existingSearch||i.text.includes(detail.existingSearch));
+      const existingPickerHTML = `
+        <input type="text" id="ex-search" placeholder="アイテム名で検索..." value="${esc(detail.existingSearch)}" style="width:100%;margin-bottom:10px;">
+        <div style="max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">
+          ${filtered.length===0?'<div style="text-align:center;padding:16px;color:#4a6080;font-size:13px;">見つかりません</div>':
+          filtered.map(i=>{
+            const cat=(trip.categories||defaultCategories()).item.find(c=>c.id===i.category);
+            return `<div class="ex-item" data-text="${esc(i.text)}" data-catid="${i.category}" data-member="${i.member}" data-qty="${i.qty||1}" data-own="${i.ownership||'owned'}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.08);cursor:pointer;">
+              <div style="width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,0.2);flex-shrink:0;"></div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:14px;font-weight:500;">${esc(i.text)}${i.qty>1?` <span style="font-size:11px;color:#8ba3c8;">×${i.qty}</span>`:""}</div>
+                <div style="font-size:11px;color:#5a7a9a;margin-top:2px;">${cat?`<span style="color:${cat.color};">${cat.label}</span> `:""}${i._cur?"この旅行":"← "+esc(i._from)}</div>
+              </div>
+            </div>`;
+          }).join("")}
+        </div>
+        <div style="display:flex;gap:10px;margin-top:14px;">
+          <button class="btn-primary" id="ex-add" style="flex:1;opacity:0.4;" disabled>追加する</button>
+          <button class="btn-ghost" id="form-cancel">キャンセル</button>
+        </div>`;
+      innerHTML = `
+        <div style="font-weight:700;font-size:17px;margin-bottom:16px;">アイテムを追加</div>
+        <div style="display:flex;gap:8px;margin-bottom:16px;">
+          <button class="mode-btn ${detail.itemMode==='new'?'active':''}" id="mode-new">新規入力</button>
+          <button class="mode-btn ${detail.itemMode==='existing'?'active':''}" id="mode-existing">登録済みから選ぶ${pastItems.length>0?` (${pastItems.length})`:""}</button>
+        </div>
+        ${detail.itemMode==="existing" ? existingPickerHTML : newItemFormHTML(cats, curCat)}`;
+    } else {
+      innerHTML = `
+        <div style="font-weight:700;font-size:17px;margin-bottom:16px;">${detail.editId?"編集":detail.tab==="todo"?"タスクを追加":"アイテムを追加"}</div>
+        ${newItemFormHTML(cats, curCat)}`;
+    }
+    formHTML = `<div class="modal-overlay" id="modal-overlay">
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        ${innerHTML}
+      </div>
+    </div>`;
+  }
+
+  function newItemFormHTML(cats, curCat) {
+    const isItem = detail.tab==="item";
+    return `
+      <div class="field"><input type="text" id="f-text" placeholder="${detail.tab==="todo"?"タスク名...":"アイテム名..."}" value="${esc(detail.form.text)}"></div>
+      <div style="display:flex;gap:10px;">
+        <div class="field" style="flex:1;"><label>カテゴリー</label><select id="f-cat">${cats.map(c=>`<option value="${c.id}"${c.id===curCat?" selected":""}>${c.label}</option>`).join("")}</select></div>
+        <div class="field"><label>対象者</label><select id="f-member" style="width:90px;">${MEMBERS.map(m=>`<option value="${m.id}"${m.id===detail.form.member?" selected":""}>${m.label}</option>`).join("")}</select></div>
+      </div>
+      ${!isItem?`<div class="field"><label>実施日（任意）</label><input type="date" id="f-due" value="${detail.form.dueDate||''}" style="color-scheme:dark;"></div>`:""}
+      ${!isItem?`<div class="field"><input type="text" id="f-note" placeholder="✍️ メモ（任意）..." value="${esc(detail.form.note||'')}"></div>`:""}
+      ${isItem?`<div style="margin-bottom:12px;"><div style="font-size:12px;color:#8ba3c8;margin-bottom:8px;">持ち物の状態</div>
+        <div style="display:flex;gap:8px;">
+          <button class="ownership-btn ${detail.form.ownership==="owned"?"active-owned":""}" id="own-owned">すでに持っている</button>
+          <button class="ownership-btn ${detail.form.ownership==="buy"?"active-buy":""}" id="own-buy">購入が必要</button>
+        </div></div>
+        <div class="field"><label>数量</label><div class="qty-row">
+          <button class="qty-btn" id="qty-minus">−</button>
+          <span id="qty-val" style="font-size:18px;font-weight:700;min-width:32px;text-align:center;">${detail.form.qty}</span>
+          <button class="qty-btn" id="qty-plus">＋</button>
+        </div></div>
+        <div class="field"><input type="text" id="f-note" placeholder="✍️ メモ（任意）..." value="${esc(detail.form.note||'')}"></div>`:""}
+      <div style="display:flex;gap:10px;margin-top:4px;">
+        <button class="btn-primary" id="f-submit" style="flex:1;">${detail.editId?"更新":"追加"}</button>
+        <button class="btn-ghost" id="form-cancel">キャンセル</button>
+      </div>`;
+  }
+
+  // リスト
+  const todoListHTML = ftodos.length===0
+    ? '<div style="text-align:center;padding:40px 0;color:#4a6080;font-size:14px;">タスクがありません</div>'
+    : ftodos.map(t => {
+        const cat=getCat(t.category), mem=getMem(t.member);
+        return `<div class="item-row ${t.done?"done":""}" style="border-left:3px solid ${t.done?"#2a3a4a":cat.color};">
+          <button class="check-circle ${t.done?"checked":""}" data-id="${t.id}" style="${t.done?`border-color:${cat.color};background:${cat.color};`:""}">
+            ${t.done?'<span style="color:white;font-size:11px;">✓</span>':""}
+          </button>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:15px;font-weight:500;${t.done?"text-decoration:line-through;":""}white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(t.text)}</div>
+            <div style="font-size:12px;color:#5a7a9a;margin-top:3px;display:flex;gap:8px;flex-wrap:wrap;">
+              <span style="color:${cat.color};">${cat.label}</span>
+              ${t.dueDate?`<span>📅 ${fmt(t.dueDate)}</span>`:""}
+              ${t.note?`<span>✍️ ${esc(t.note)}</span>`:""}
+            </div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+            <div class="member-badge" style="background:${mem.color};">${mem.label.slice(0,2)}</div>
+            <button class="edit-item icon-btn" data-type="todo" data-id="${t.id}">✏️</button>
+            <button class="del-item  icon-btn" data-type="todo" data-id="${t.id}">✕</button>
+          </div>
+        </div>`;
+      }).join("");
+
+  const itemListHTML = fitems.length===0
+    ? '<div style="text-align:center;padding:40px 0;color:#4a6080;font-size:14px;">アイテムがありません</div>'
+    : fitems.map(i => {
+        const cat=getCat(i.category), mem=getMem(i.member), isBuy=i.ownership==="buy";
+        const ac=isBuy?"#E8A838":cat.color;
+        return `<div class="item-row ${i.packed?"done":""}" style="border-left:3px solid ${i.packed?"#2a3a4a":ac};${isBuy?"background:rgba(232,168,56,0.04);border-color:rgba(232,168,56,0.22);border-left-color:"+(i.packed?"#2a3a4a":ac)+";":""}">
+          <button class="check-square ${i.packed?"checked":""}" data-id="${i.id}" style="${i.packed?`border-color:${ac};background:${ac};`:""}">
+            ${i.packed?'<span style="color:white;font-size:11px;">✓</span>':""}
+          </button>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:15px;font-weight:500;${i.packed?"text-decoration:line-through;":""}display:flex;align-items:center;gap:8px;">
+              ${esc(i.text)}${i.qty>1?`<span style="font-size:12px;color:#8ba3c8;background:rgba(255,255,255,0.08);padding:1px 8px;border-radius:10px;">×${i.qty}</span>`:""}
+            </div>
+            <div style="font-size:12px;color:#5a7a9a;margin-top:5px;display:flex;gap:8px;flex-wrap:wrap;">
+              <span style="color:${cat.color};">${cat.label}</span>
+              <span style="display:inline-flex;align-items:center;background:${isBuy?"rgba(232,168,56,0.15)":"rgba(91,173,143,0.13)"};color:${isBuy?"#E8A838":"#5BAD8F"};border:1px solid ${isBuy?"rgba(232,168,56,0.3)":"rgba(91,173,143,0.3)"};border-radius:20px;padding:1px 9px;font-size:11px;font-weight:600;">${isBuy?"購入が必要":"持っている"}</span>
+              ${i.note?`<span style="color:#5a7a9a;">✍️ ${esc(i.note)}</span>`:""}
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;flex-direction:column;">
+            ${isBuy&&!i.packed?`<button class="bought-btn icon-btn" data-id="${i.id}" style="background:rgba(91,173,143,0.15);border:1px solid rgba(91,173,143,0.35);border-radius:8px;color:#5BAD8F;font-size:11px;font-weight:600;padding:4px 8px;white-space:nowrap;">購入済み ✓</button>`:""}
+            <div style="display:flex;align-items:center;gap:6px;">
+              <div class="member-badge" style="background:${mem.color};">${mem.label.slice(0,2)}</div>
+              <button class="edit-item icon-btn" data-type="item" data-id="${i.id}">✏️</button>
+              <button class="del-item  icon-btn" data-type="item" data-id="${i.id}">✕</button>
+            </div>
+          </div>
+        </div>`;
+      }).join("");
+
+  // 持ち物サマリー
+  const ownedCount = items.filter(i=>i.ownership==="owned").length;
+  const buyCount   = items.filter(i=>i.ownership==="buy").length;
+  const buyDone    = items.filter(i=>i.ownership==="buy"&&i.packed).length;
+  const summaryHTML = detail.tab==="item" ? `
+    <div style="display:flex;gap:10px;margin-bottom:16px;">
+      <div class="card" style="flex:1;padding:14px 16px;cursor:pointer;${detail.filterOwnership==='owned'?'background:rgba(91,173,143,0.18);border-color:rgba(91,173,143,0.5);':''}" id="sum-owned">
+        <div style="font-size:20px;margin-bottom:6px;">✅</div>
+        <div style="font-size:22px;font-weight:800;color:${detail.filterOwnership==='owned'?'#5BAD8F':'#e8f0fe'};line-height:1;">${ownedCount}</div>
+        <div style="font-size:12px;color:#8ba3c8;margin-top:4px;">すでに持っている</div>
+      </div>
+      <div class="card" style="flex:1;padding:14px 16px;cursor:pointer;${detail.filterOwnership==='buy'?'background:rgba(232,168,56,0.18);border-color:rgba(232,168,56,0.5);':''}" id="sum-buy">
+        <div style="font-size:20px;margin-bottom:6px;">🛒</div>
+        <div style="font-size:22px;font-weight:800;color:${detail.filterOwnership==='buy'?'#E8A838':'#e8f0fe'};line-height:1;">${buyCount}</div>
+        <div style="font-size:12px;color:#8ba3c8;margin-top:4px;">購入が必要</div>
+        ${buyCount>0?`<div style="font-size:11px;color:#5a7a9a;margin-top:3px;">購入済み ${buyDone}/${buyCount}</div>`:""}
+      </div>
+    </div>` : "";
+
+  return `<div class="screen">
+    <div class="sticky-header">
+      <div class="inner">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+          <button id="back-btn" class="icon-btn" style="font-size:20px;">←</button>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:17px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(trip.name)}</span>
+              <button id="trip-edit-btn" class="icon-btn">✏️</button>
+              ${detail.saving?'<span style="font-size:11px;color:#5a7a9a;">保存中...</span>':""}
+            </div>
+            <div style="font-size:12px;color:#8ba3c8;">${trip.dateFrom&&trip.dateTo?fmt(trip.dateFrom)+' 〜 '+fmt(trip.dateTo):trip.dateFrom?fmt(trip.dateFrom):"日程未定"}</div>
+          </div>
+        </div>
+        ${tripEditHTML}
+        <div style="display:flex;gap:16px;margin-bottom:12px;margin-top:8px;">
+          <div style="flex:1;"><div style="font-size:11px;color:#8ba3c8;margin-bottom:4px;">タスク ${todoDone}/${tLen}</div><div class="progress-bar"><div class="progress-fill" style="width:${tLen?(todoDone/tLen*100):0}%;background:linear-gradient(90deg,#4A90D9,#7B68EE);"></div></div></div>
+          <div style="flex:1;"><div style="font-size:11px;color:#8ba3c8;margin-bottom:4px;">荷物 ${itemPacked}/${iLen}</div><div class="progress-bar"><div class="progress-fill" style="width:${iLen?(itemPacked/iLen*100):0}%;background:linear-gradient(90deg,#E07B54,#E8A838);"></div></div></div>
+        </div>
+        <div style="display:flex;">
+          <button class="tab-btn ${detail.tab==="todo"?"active":""}" id="tab-todo">To-Do</button>
+          <button class="tab-btn ${detail.tab==="item"?"active":""}" id="tab-item">持ち物</button>
+        </div>
+      </div>
+    </div>
+    <div class="content">
+      ${summaryHTML}
+      <div style="display:flex;gap:10px;margin-bottom:16px;">
+        <div class="field" style="flex:1;"><label>対象者</label><select id="fil-member"><option value="all_members"${detail.filterMember==="all_members"?" selected":""}>全員</option>${MEMBERS.map(m=>`<option value="${m.id}"${m.id===detail.filterMember?" selected":""}>${m.label}</option>`).join("")}</select></div>
+        <div class="field" style="flex:1;"><label>カテゴリー</label><select id="fil-cat"><option value="all"${detail.filterCat==="all"?" selected":""}>すべて</option>${cats.map(c=>`<option value="${c.id}"${c.id===detail.filterCat?" selected":""}>${c.label}</option>`).join("")}</select></div>
+      </div>
+      ${detail.tab==="todo" ? todoListHTML : itemListHTML}
+      ${!detail.showCatMgr?`
+        <div style="display:flex;gap:10px;margin-top:16px;">
+          <button class="btn-add" id="form-open" style="flex:1;margin-top:0;">＋ ${detail.tab==="todo"?"タスクを追加":"アイテムを追加"}</button>
+          <button class="btn-ghost" id="catmgr-open" style="white-space:nowrap;">カテゴリー管理</button>
+        </div>`:""}
+      ${catMgrHTML}
+    </div>
+  </div>
+  ${formHTML}`;
+}
+
+function bindDetail(trip) {
+  const todos = trip.todos||[], items = trip.items||[];
+  const cats  = (trip.categories||defaultCategories())[detail.tab]||[];
+  const categories = trip.categories||defaultCategories();
+
+  const update = async (patch) => {
+    detail.saving=true;
+    await saveTrip({...trip,...patch,updatedAt:serverTimestamp()});
+    detail.saving=false;
+  };
+
+  document.getElementById("back-btn")?.addEventListener("click", ()=>{ selectedTripId=null; render(); });
+  document.getElementById("tab-todo")?.addEventListener("click", ()=>{ detail.tab="todo"; detail.filterCat="all"; detail.showForm=false; detail.showCatMgr=false; render(); });
+  document.getElementById("tab-item")?.addEventListener("click", ()=>{ detail.tab="item"; detail.filterCat="all"; detail.showForm=false; detail.showCatMgr=false; render(); });
+  document.getElementById("fil-member")?.addEventListener("change", e=>{ detail.filterMember=e.target.value; render(); });
+  document.getElementById("fil-cat")?.addEventListener("change",    e=>{ detail.filterCat=e.target.value; render(); });
+  document.getElementById("sum-owned")?.addEventListener("click", ()=>{ detail.filterOwnership=detail.filterOwnership==="owned"?"all":"owned"; render(); });
+  document.getElementById("sum-buy")?.addEventListener("click",   ()=>{ detail.filterOwnership=detail.filterOwnership==="buy"?"all":"buy"; render(); });
+
+  // 旅行名編集
+  document.getElementById("trip-edit-btn")?.addEventListener("click", ()=>{ detail.showTripEdit=!detail.showTripEdit; detail.showForm=false; detail.showCatMgr=false; render(); });
+  document.getElementById("te-cancel")?.addEventListener("click", ()=>{ detail.showTripEdit=false; render(); });
+  document.getElementById("te-save")?.addEventListener("click", async ()=>{
+    const name = document.getElementById("te-name")?.value.trim();
+    if (!name) return;
+    const dateFrom = document.getElementById("te-from")?.value||"";
+    const dateTo   = document.getElementById("te-to")?.value||"";
+    await update({name, dateFrom, dateTo});
+    detail.newName=name; detail.newDateFrom=dateFrom; detail.newDateTo=dateTo;
+    detail.showTripEdit=false;
+  });
+
+  // チェック
+  document.querySelectorAll(".check-circle").forEach(el=>{
+    el.addEventListener("click", ()=>update({todos:todos.map(t=>t.id===el.dataset.id?{...t,done:!t.done}:t)}));
+  });
+  document.querySelectorAll(".check-square").forEach(el=>{
+    el.addEventListener("click", ()=>update({items:items.map(i=>i.id===el.dataset.id?{...i,packed:!i.packed}:i)}));
+  });
+  document.querySelectorAll(".bought-btn").forEach(el=>{
+    el.addEventListener("click", ()=>update({items:items.map(i=>i.id===el.dataset.id?{...i,ownership:"owned"}:i)}));
+  });
+
+  // 編集・削除
+  document.querySelectorAll(".edit-item").forEach(el=>{
+    el.addEventListener("click", ()=>{
+      const type=el.dataset.type, id=el.dataset.id;
+      const src = type==="todo" ? todos.find(t=>t.id===id) : items.find(i=>i.id===id);
+      if (!src) return;
+      detail.form={text:src.text,category:src.category,member:src.member,note:src.note||"",qty:src.qty||1,ownership:src.ownership||"owned",dueDate:src.dueDate||""};
+      detail.editId=id; detail.showForm=true; detail.showCatMgr=false; detail.showTripEdit=false;
+      render();
+    });
+  });
+  document.querySelectorAll(".del-item").forEach(el=>{
+    el.addEventListener("click", ()=>{
+      const type=el.dataset.type, id=el.dataset.id;
+      if (type==="todo") update({todos:todos.filter(t=>t.id!==id)});
+      else               update({items:items.filter(i=>i.id!==id)});
+    });
+  });
+
+  // フォームを開く
+  document.getElementById("form-open")?.addEventListener("click", ()=>{
+    detail.form={text:"",category:cats[0]?.id||"",member:"naoki",note:"",qty:1,ownership:"owned",dueDate:""};
+    detail.editId=null; detail.showForm=true; detail.showCatMgr=false; detail.showTripEdit=false; detail.itemMode="new"; detail.existingSearch="";
+    render();
+  });
+  document.getElementById("form-cancel")?.addEventListener("click", ()=>{ detail.showForm=false; detail.editId=null; render(); });
+  // オーバーレイをタップで閉じる
+  document.getElementById("modal-overlay")?.addEventListener("click", (e)=>{ if(e.target.id==="modal-overlay"){detail.showForm=false;detail.editId=null;render();} });
+  document.getElementById("catmgr-open")?.addEventListener("click", ()=>{ detail.showCatMgr=true; detail.showForm=false; render(); });
+  document.getElementById("cat-close")?.addEventListener("click",   ()=>{ detail.showCatMgr=false; render(); });
+
+  // モード切替（持ち物）
+  document.getElementById("mode-new")?.addEventListener("click",      ()=>{ detail.itemMode="new"; render(); });
+  document.getElementById("mode-existing")?.addEventListener("click", ()=>{ detail.itemMode="existing"; detail.existingSearch=""; render(); });
+
+  // 既存検索
+  document.getElementById("ex-search")?.addEventListener("input", e=>{
+    detail.existingSearch=e.target.value;
+    // アイテムをre-renderせず選択状態だけ更新
+  });
+
+  // 既存アイテム選択
+  let selectedExisting = null;
+  document.querySelectorAll(".ex-item").forEach(el=>{
+    el.addEventListener("click", ()=>{
+      document.querySelectorAll(".ex-item").forEach(x=>{ x.style.background="rgba(255,255,255,0.04)"; x.style.borderColor="rgba(255,255,255,0.08)"; x.querySelector("div").style.background="transparent"; x.querySelector("div").style.borderColor="rgba(255,255,255,0.2)"; });
+      el.style.background="rgba(74,144,217,0.15)"; el.style.borderColor="#4A90D9";
+      el.querySelector("div").style.background="#4A90D9"; el.querySelector("div").style.borderColor="#4A90D9";
+      selectedExisting = el.dataset;
+      const addBtn = document.getElementById("ex-add");
+      if (addBtn) { addBtn.disabled=false; addBtn.style.opacity="1"; }
+    });
+  });
+  document.getElementById("ex-add")?.addEventListener("click", async ()=>{
+    if (!selectedExisting) return;
+    const catExists = categories.item.find(c=>c.id===selectedExisting.catid);
+    await update({items:[...items,{id:uid(),text:selectedExisting.text,category:catExists?selectedExisting.catid:(categories.item[0]?.id||""),member:selectedExisting.member,qty:+selectedExisting.qty,ownership:selectedExisting.own,packed:false}]});
+    detail.showForm=false;
+  });
+
+  // 所有状態ボタン
+  document.getElementById("own-owned")?.addEventListener("click", ()=>{ detail.form.ownership="owned"; render(); });
+  document.getElementById("own-buy")?.addEventListener("click",   ()=>{ detail.form.ownership="buy";   render(); });
+
+  // 数量
+  document.getElementById("qty-minus")?.addEventListener("click", ()=>{ detail.form.qty=Math.max(1,detail.form.qty-1); document.getElementById("qty-val").textContent=detail.form.qty; });
+  document.getElementById("qty-plus")?.addEventListener("click",  ()=>{ detail.form.qty++; document.getElementById("qty-val").textContent=detail.form.qty; });
+
+  // フォーム送信
+  document.getElementById("f-submit")?.addEventListener("click", async ()=>{
+    const text = document.getElementById("f-text")?.value.trim();
+    if (!text) return;
+    const cat    = document.getElementById("f-cat")?.value    || cats[0]?.id || "";
+    const member = document.getElementById("f-member")?.value || "naoki";
+    const note   = document.getElementById("f-note")?.value   || "";
+    const dueDate = document.getElementById("f-due")?.value   || "";
+    if (detail.tab==="todo") {
+      const next = detail.editId
+        ? todos.map(t=>t.id===detail.editId?{...t,text,category:cat,member,note,dueDate}:t)
+        : [...todos,{id:uid(),text,category:cat,member,note,dueDate,done:false}];
+      await update({todos:next});
+    } else {
+      const next = detail.editId
+        ? items.map(i=>i.id===detail.editId?{...i,text,category:cat,member,note,qty:detail.form.qty,ownership:detail.form.ownership}:i)
+        : [...items,{id:uid(),text,category:cat,member,note,qty:detail.form.qty,ownership:detail.form.ownership,packed:false}];
+      await update({items:next});
+    }
+    detail.showForm=false; detail.editId=null;
+    detail.form={text:"",category:"",member:"naoki",note:"",qty:1,ownership:"owned",dueDate:""};
+  });
+
+  // カテゴリー追加・削除
+  document.getElementById("cat-add")?.addEventListener("click", async ()=>{
+    const label = document.getElementById("cat-input")?.value.trim();
+    if (!label) return;
+    const nc={id:`cat_${uid()}`,label,color:COLORS[cats.length%COLORS.length]};
+    await update({categories:{...categories,[detail.tab]:[...cats,nc]}});
+    detail.showCatMgr=true;
+  });
+  document.querySelectorAll(".del-cat").forEach(el=>{
+    el.addEventListener("click", ()=>update({categories:{...categories,[detail.tab]:cats.filter(c=>c.id!==el.dataset.catid)}}));
+  });
+}
+
+// ═══════════════════════════════════════
+// ユーティリティ
+// ═══════════════════════════════════════
+function esc(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+render();
+</script>
+</body>
+</html>
