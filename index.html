@@ -474,10 +474,14 @@
         </div>
         <button onclick="exportCSV()" style="font-size:12px;padding:6px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);cursor:pointer;color:var(--muted);white-space:nowrap">📥 CSV</button>
       </div>
-      <div class="chart-member-filter">
+      <div class="chart-member-filter" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <button class="chart-member-btn active all" onclick="setChartMember('all', this)">全員</button>
         <button class="chart-member-btn naoki" onclick="setChartMember('naoki', this)">naoki</button>
         <button class="chart-member-btn yumi" onclick="setChartMember('yumi', this)">yumi</button>
+        <select id="chart-cat-filter" onchange="setChartCatFilter(this.value)"
+          style="margin-left:auto;padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);font-size:13px;color:var(--text);cursor:pointer">
+          <option value="">カテゴリ（全て）</option>
+        </select>
       </div>
       <div class="month-summary">
         <div class="summary-item"><div class="summary-label">収入</div><div class="summary-value income" id="chart-income">¥0</div></div>
@@ -791,6 +795,7 @@ const now = new Date();
 let chartYear = now.getFullYear();
 let chartMonth = now.getMonth();
 let chartMemberFilter = 'all';
+let chartCatFilter = '';
 let historyYear = now.getFullYear();
 let historyMonth = now.getMonth();
 let historyShowAll = false;
@@ -851,6 +856,20 @@ window.setChartMember = (m, el) => {
   el.classList.add('active', m);
   renderChart();
 };
+
+window.setChartCatFilter = (val) => {
+  chartCatFilter = val;
+  renderChart();
+};
+
+function populateChartCatFilter() {
+  const sel = document.getElementById('chart-cat-filter');
+  if (!sel) return;
+  const cats = Object.keys(categories['expense']);
+  sel.innerHTML = '<option value="">カテゴリ（全て）</option>'
+    + cats.map(c => `<option value="${c}">${c}</option>`).join('');
+  sel.value = chartCatFilter;
+}
 
 window.changeChartMonth = (delta) => {
   chartMonth += delta;
@@ -1686,11 +1705,20 @@ function getTxForMonth(y, m, member) {
 
 function renderChart() {
   const mf = chartMemberFilter;
+  const cf = chartCatFilter;
   const mlEl = document.getElementById('chart-month-label');
   if (!mlEl) return;
   mlEl.textContent = `${chartYear}年${chartMonth + 1}月`;
 
-  const monthTx = getTxForMonth(chartYear, chartMonth, mf);
+  populateChartCatFilter();
+
+  // カテゴリフィルター適用関数
+  function applyFilter(txs) {
+    return cf ? txs.filter(t => t.catMain === cf) : txs;
+  }
+
+  const monthTxRaw = getTxForMonth(chartYear, chartMonth, mf);
+  const monthTx = applyFilter(monthTxRaw);
   const inc = monthTx.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
   const exp = monthTx.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
   const bal = inc - exp;
@@ -1710,7 +1738,7 @@ function renderChart() {
   for (let i = 5; i >= 0; i--) {
     let y = chartYear, m = chartMonth - i;
     while (m < 0) { m += 12; y--; }
-    const txs = getTxForMonth(y, m, mf);
+    const txs = applyFilter(getTxForMonth(y, m, mf));
     const mi = txs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
     const me = txs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
     months.push({ label: `${m + 1}月`, income: mi, expense: me, diff: mi - me });
@@ -1741,8 +1769,8 @@ function renderChart() {
   const splitCard = document.getElementById('member-split-card');
   if (mf === 'all') {
     splitCard.style.display = 'block';
-    const ne = getTxForMonth(chartYear, chartMonth, 'naoki').filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
-    const ye = getTxForMonth(chartYear, chartMonth, 'yumi').filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+    const ne = applyFilter(getTxForMonth(chartYear, chartMonth, 'naoki')).filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+    const ye = applyFilter(getTxForMonth(chartYear, chartMonth, 'yumi')).filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
     const tot = ne + ye || 1;
     document.getElementById('member-split').innerHTML = `
       <div class="member-bar-row"><div class="member-bar-label" style="color:var(--naoki)">naoki</div><div class="member-bar-track"><div class="member-bar-fill naoki" style="width:${Math.round(ne/tot*100)}%"></div></div><div class="member-bar-val">${fmt(ne)}</div></div>
