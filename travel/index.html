@@ -328,14 +328,17 @@ function detailHTML(trip) {
   const todoDone=todos.filter(t=>t.done).length, itemPacked=items.filter(i=>i.packed).length;
   const tLen=todos.length, iLen=items.length;
 
-  // フィルター済みリスト
+  // フィルター済み＆カテゴリー順ソート
+  const catOrder = cats.reduce((acc,c,i)=>({...acc,[c.id]:i}),{});
   const ftodos = todos.filter(t=>
     (detail.filterMember==="all_members"||t.member===detail.filterMember)&&
-    (detail.filterCat==="all"||t.category===detail.filterCat));
+    (detail.filterCat==="all"||t.category===detail.filterCat))
+    .sort((a,b)=>(catOrder[a.category]??99)-(catOrder[b.category]??99));
   const fitems = items.filter(i=>
     (detail.filterMember==="all_members"||i.member===detail.filterMember)&&
     (detail.filterCat==="all"||i.category===detail.filterCat)&&
-    (detail.filterOwnership==="all"||i.ownership===detail.filterOwnership));
+    (detail.filterOwnership==="all"||i.ownership===detail.filterOwnership))
+    .sort((a,b)=>(catOrder[a.category]??99)-(catOrder[b.category]??99));
 
   // 旅行名編集フォーム
   const tripEditHTML = detail.showTripEdit ? `
