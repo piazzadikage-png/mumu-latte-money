@@ -557,6 +557,14 @@
             </div>
             <div class="cal-grid" id="cal-grid"></div>
           </div>
+          <!-- カレンダー用フィルター -->
+          <div class="filter-row" style="margin-top:10px">
+            <button class="filter-tab active" onclick="setFilter('type','all',this)">すべて</button>
+            <button class="filter-tab" onclick="setFilter('type','income',this)">収入</button>
+            <button class="filter-tab" onclick="setFilter('type','expense',this)">支出</button>
+            <button class="filter-tab naoki-f" onclick="setFilter('member','naoki',this)">naoki</button>
+            <button class="filter-tab yumi-f" onclick="setFilter('member','yumi',this)">yumi</button>
+          </div>
           <div id="cal-day-detail"></div>
         </div>
         <!-- List view -->
@@ -847,7 +855,8 @@ window.setFilter = (axis, val, el) => {
     document.querySelectorAll('.filter-tab.naoki-f, .filter-tab.yumi-f').forEach(t => t.classList.remove('active'));
     if (filterMember !== 'all') el.classList.add('active');
   }
-  renderList();
+  if (historyView === 'calendar') renderCalendar();
+  else renderList();
 };
 
 window.setChartMember = (m, el) => {
@@ -1202,12 +1211,13 @@ window.showStoreSuggest = () => {
 };
 window.filterStoreSuggest = () => {
   const raw = document.getElementById('store').value;
-  const val = normalizeStore(raw);
-  // 入力をリアルタイム正規化
-  if (val !== raw) {
-    document.getElementById('store').value = val;
+  // 全角英数→半角のみリアルタイム変換（スペースは保持）
+  const converted = raw.replace(/[\uff01-\uff5e]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+                       .replace(/\u3000/g, ' ');
+  if (converted !== raw) {
+    document.getElementById('store').value = converted;
   }
-  renderStoreSuggest(val);
+  renderStoreSuggest(converted.trim().toLowerCase());
 };
 window.hideStoreSuggest = () => {
   setTimeout(() => {
@@ -1592,10 +1602,13 @@ function renderCalendar() {
 
   // Build daily totals
   const dailyExp = {}, dailyInc = {};
-  transactions.filter(t => t.date && t.date.startsWith(key)).forEach(t => {
-    if (t.type === 'expense') dailyExp[t.date] = (dailyExp[t.date] || 0) + t.amount;
-    if (t.type === 'income') dailyInc[t.date] = (dailyInc[t.date] || 0) + t.amount;
-  });
+  transactions.filter(t => t.date && t.date.startsWith(key))
+    .filter(t => filterType === 'all' || t.type === filterType)
+    .filter(t => filterMember === 'all' || t.member === filterMember)
+    .forEach(t => {
+      if (t.type === 'expense') dailyExp[t.date] = (dailyExp[t.date] || 0) + t.amount;
+      if (t.type === 'income') dailyInc[t.date] = (dailyInc[t.date] || 0) + t.amount;
+    });
 
   let cells = '';
   // Empty cells before first day
@@ -1633,6 +1646,8 @@ function renderCalendar() {
   if (!selectedCalDay) { detail.innerHTML = ''; return; }
 
   const dayTx = transactions.filter(t => t.date === selectedCalDay)
+    .filter(t => filterType === 'all' || t.type === filterType)
+    .filter(t => filterMember === 'all' || t.member === filterMember)
     .sort((a, b) => a.createdAt - b.createdAt);
 
   if (!dayTx.length) { detail.innerHTML = `<div class="empty">${selectedCalDay} の記録はありません</div>`; return; }
