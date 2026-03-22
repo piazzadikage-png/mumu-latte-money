@@ -515,29 +515,35 @@ function detailHTML(trip) {
     const makeCatCard = (c, total, done, notDone) => {
       const isActive = detail.filterCat === c.id;
       return `<div class="cat-card" data-catid="${c.id}" style="border-color:${isActive?c.color:"rgba(255,255,255,0.1)"};background:${isActive?`${c.color}22`:"rgba(255,255,255,0.04)"};">
-        <div class="cat-card-num" style="color:${isActive?c.color:"#e8f0fe"};">${total}</div>
-        <div class="cat-card-info">
-          <div class="cat-card-name" style="color:${isActive?c.color:"#8ba3c8"};">${c.label}</div>
-          ${total>0?`<div class="cat-card-stat"><span>完了済み</span><span style="color:${c.color};font-weight:600;">${done}</span></div>
-          <div class="cat-card-stat"><span>未完了</span><span style="font-weight:600;">${notDone}</span></div>`:""}
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="cat-card-name" style="color:${isActive?c.color:"#e8f0fe"};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.label}</span>
+            <span class="cat-card-num" style="color:${isActive?c.color:"#e8f0fe"};">${total}</span>
+          </div>
+          ${total>0?`<div style="display:flex;gap:10px;margin-top:3px;">
+            <span class="cat-card-stat">完了済み <span style="color:${c.color};font-weight:700;">${done}</span></span>
+            <span class="cat-card-stat">未完了 <span style="font-weight:700;color:#e8f0fe;">${notDone}</span></span>
+          </div>`:`<div class="cat-card-stat" style="margin-top:2px;">なし</div>`}
         </div>
       </div>`;
     };
     if (detail.tab === "todo") {
       const allCats = (trip.categories||defaultCategories()).todo;
-      const cards = allCats.map(c => {
+      const data = allCats.map(c => {
         const total = todos.filter(t=>t.category===c.id).length;
         const done  = todos.filter(t=>t.category===c.id&&t.done).length;
-        return makeCatCard(c, total, done, total-done);
-      }).join("");
+        return {c, total, done};
+      }).sort((a,b)=>b.total-a.total);
+      const cards = data.map(({c,total,done})=>makeCatCard(c,total,done,total-done)).join("");
       return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">${cards}</div>`;
     } else {
       const allCats = (trip.categories||defaultCategories()).item;
-      const cards = allCats.map(c => {
+      const data = allCats.map(c => {
         const total  = items.filter(i=>i.category===c.id).length;
         const packed = items.filter(i=>i.category===c.id&&i.packed).length;
-        return makeCatCard(c, total, packed, total-packed);
-      }).join("");
+        return {c, total, packed};
+      }).sort((a,b)=>b.total-a.total);
+      const cards = data.map(({c,total,packed})=>makeCatCard(c,total,packed,total-packed)).join("");
       return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">${cards}</div>`;
     }
   };
@@ -568,13 +574,11 @@ function detailHTML(trip) {
       </div>
     </div>
     <div class="content">
-      ${makeDashboard()}
-      <div style="margin-bottom:14px;">
-        <div style="display:flex;gap:8px;">
-          <div class="field" style="flex:1;"><label>対象者</label><select id="fil-member"><option value="all_members"${detail.filterMember==="all_members"?" selected":""}>全員</option>${MEMBERS.map(m=>`<option value="${m.id}"${m.id===detail.filterMember?" selected":""}>${m.label}</option>`).join("")}</select></div>
-          ${detail.tab==="item"?`<div class="field" style="flex:1;"><label>購入状況</label><select id="fil-ownership"><option value="all"${detail.filterOwnership==="all"?" selected":""}>すべて</option><option value="owned"${detail.filterOwnership==="owned"?" selected":""}>持っている</option><option value="buy"${detail.filterOwnership==="buy"?" selected":""}>購入が必要</option></select></div>`:""}
-        </div>
+      <div style="display:flex;gap:8px;margin-bottom:14px;">
+        <div class="field" style="flex:1;"><label>対象者</label><select id="fil-member"><option value="all_members"${detail.filterMember==="all_members"?" selected":""}>全員</option>${MEMBERS.map(m=>`<option value="${m.id}"${m.id===detail.filterMember?" selected":""}>${m.label}</option>`).join("")}</select></div>
+        ${detail.tab==="item"?`<div class="field" style="flex:1;"><label>購入状況</label><select id="fil-ownership"><option value="all"${detail.filterOwnership==="all"?" selected":""}>すべて</option><option value="owned"${detail.filterOwnership==="owned"?" selected":""}>持っている</option><option value="buy"${detail.filterOwnership==="buy"?" selected":""}>購入が必要</option></select></div>`:""}
       </div>
+      ${makeDashboard()}
       ${detail.tab==="todo" ? todoListHTML : itemListHTML}
       ${!detail.showCatMgr?`
         <div style="display:flex;gap:10px;margin-top:16px;">
