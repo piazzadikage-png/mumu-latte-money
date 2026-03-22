@@ -492,9 +492,7 @@ function detailHTML(trip) {
               <span style="font-size:15px;font-weight:500;${i.packed?"text-decoration:line-through;":""}">
                 ${esc(i.text)}${i.qty>1?`<span style="font-size:12px;color:#8ba3c8;background:rgba(255,255,255,0.08);padding:1px 8px;border-radius:10px;margin-left:4px;">×${i.qty}</span>`:""}
               </span>
-              <button class="toggle-own icon-btn" data-id="${i.id}" data-own="${i.ownership}" style="display:inline-flex;align-items:center;gap:3px;background:${isBuy?"rgba(232,168,56,0.15)":"rgba(91,173,143,0.13)"};color:${ac};border:1px solid ${isBuy?"rgba(232,168,56,0.4)":"rgba(91,173,143,0.4)"};border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">
-                ${isBuy?"購入が必要 ✓":"すでに持ってる"}
-              </button>
+              ${isBuy?`<button class="toggle-own icon-btn" data-id="${i.id}" data-own="${i.ownership}" style="display:inline-flex;align-items:center;gap:3px;background:rgba(232,168,56,0.15);color:#E8A838;border:1px solid rgba(232,168,56,0.4);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">購入が必要 ✓</button>`:""}
             </div>
             <div style="font-size:12px;color:#5a7a9a;margin-top:5px;display:flex;gap:8px;flex-wrap:wrap;">
               <span style="color:${cat.color};">${cat.label}</span>
