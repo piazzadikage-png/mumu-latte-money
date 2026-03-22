@@ -574,11 +574,14 @@ function detailHTML(trip) {
       </div>
       ${!detail.showCatMgr?`
         <div style="display:flex;gap:8px;margin-bottom:14px;">
-          <button class="btn-add" id="form-open" style="flex:1;margin-top:0;padding:10px;">＋ ${detail.tab==="todo"?"タスクを追加":"アイテムを追加"}</button>
           <button class="btn-ghost" id="catmgr-open" style="white-space:nowrap;">カテゴリー管理</button>
         </div>`:""}
       ${catMgrHTML}
       ${makeDashboard()}
+      ${!detail.showCatMgr?`
+        <div style="display:flex;gap:8px;margin-bottom:14px;">
+          <button class="btn-add" id="form-open" style="flex:1;margin-top:0;padding:10px;">＋ ${detail.tab==="todo"?"タスクを追加":"アイテムを追加"}</button>
+        </div>`:""}
       ${detail.tab==="todo" ? todoListHTML : itemListHTML}
     </div>
   </div>
