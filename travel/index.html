@@ -572,14 +572,14 @@ function detailHTML(trip) {
         <div class="field" style="flex:1;"><label>対象者</label><select id="fil-member"><option value="all_members"${detail.filterMember==="all_members"?" selected":""}>全員</option>${MEMBERS.map(m=>`<option value="${m.id}"${m.id===detail.filterMember?" selected":""}>${m.label}</option>`).join("")}</select></div>
         ${detail.tab==="item"?`<div class="field" style="flex:1;"><label>購入状況</label><select id="fil-ownership"><option value="all"${detail.filterOwnership==="all"?" selected":""}>すべて</option><option value="owned"${detail.filterOwnership==="owned"?" selected":""}>持っている</option><option value="buy"${detail.filterOwnership==="buy"?" selected":""}>購入が必要</option></select></div>`:""}
       </div>
-      ${makeDashboard()}
-      ${detail.tab==="todo" ? todoListHTML : itemListHTML}
       ${!detail.showCatMgr?`
-        <div style="display:flex;gap:10px;margin-top:16px;">
-          <button class="btn-add" id="form-open" style="flex:1;margin-top:0;">＋ ${detail.tab==="todo"?"タスクを追加":"アイテムを追加"}</button>
+        <div style="display:flex;gap:8px;margin-bottom:14px;">
+          <button class="btn-add" id="form-open" style="flex:1;margin-top:0;padding:10px;">＋ ${detail.tab==="todo"?"タスクを追加":"アイテムを追加"}</button>
           <button class="btn-ghost" id="catmgr-open" style="white-space:nowrap;">カテゴリー管理</button>
         </div>`:""}
       ${catMgrHTML}
+      ${makeDashboard()}
+      ${detail.tab==="todo" ? todoListHTML : itemListHTML}
     </div>
   </div>
   ${formHTML}`;
