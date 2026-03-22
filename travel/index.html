@@ -56,11 +56,11 @@
     .modal-handle { display: none; }
     .qty-row { display: flex; align-items: center; gap: 16px; }
     .qty-btn { width: 36px; height: 36px; border-radius: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); color: #e8f0fe; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .cat-card { flex-shrink:0; min-width:130px; padding:12px 14px; border-radius:12px; border:1.5px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.04); transition:all 0.18s; cursor:pointer; display:flex; align-items:center; gap:10px; }
-    .cat-card-num { font-size:28px; font-weight:800; line-height:1; flex-shrink:0; min-width:32px; }
-    .cat-card-info { display:flex; flex-direction:column; gap:2px; }
+    .cat-card { padding:8px 12px; border-radius:12px; border:1.5px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.04); transition:all 0.18s; cursor:pointer; display:flex; align-items:center; gap:10px; }
+    .cat-card-num { font-size:22px; font-weight:800; line-height:1; flex-shrink:0; min-width:26px; }
+    .cat-card-info { display:flex; flex-direction:column; gap:1px; }
     .cat-card-name { font-size:12px; font-weight:600; }
-    .cat-card-stat { font-size:11px; color:#5a7a9a; display:flex; justify-content:space-between; gap:8px; }
+    .cat-card-stat { font-size:10px; color:#5a7a9a; display:flex; justify-content:space-between; gap:8px; }
   </style>
 </head>
 <body>
@@ -482,29 +482,30 @@ function detailHTML(trip) {
     ? '<div style="text-align:center;padding:40px 0;color:#4a6080;font-size:14px;">アイテムがありません</div>'
     : fitems.map(i => {
         const cat=getCat(i.category), mem=getMem(i.member), isBuy=i.ownership==="buy";
-        const ac=isBuy?"#E8A838":cat.color;
-        return `<div class="item-row ${i.packed?"done":""}" style="border-left:3px solid ${i.packed?"#2a3a4a":ac};${isBuy?"background:rgba(232,168,56,0.04);border-color:rgba(232,168,56,0.22);border-left-color:"+(i.packed?"#2a3a4a":ac)+";":""}">
-          <button class="check-square ${i.packed?"checked":""}" data-id="${i.id}" style="${i.packed?`border-color:${ac};background:${ac};`:""}">
+        const ac=isBuy?"#E8A838":"#5BAD8F";
+        return `<div class="item-row ${i.packed?"done":""}" style="border-left:3px solid ${i.packed?"#2a3a4a":cat.color};background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.1);border-left-color:${i.packed?"#2a3a4a":cat.color};">
+          <button class="check-square ${i.packed?"checked":""}" data-id="${i.id}" style="${i.packed?`border-color:${cat.color};background:${cat.color};`:""}">
             ${i.packed?'<span style="color:white;font-size:11px;">✓</span>':""}
           </button>
           <div style="flex:1;min-width:0;">
-            <div style="font-size:15px;font-weight:500;${i.packed?"text-decoration:line-through;":""}display:flex;align-items:center;gap:8px;">
-              ${esc(i.text)}${i.qty>1?`<span style="font-size:12px;color:#8ba3c8;background:rgba(255,255,255,0.08);padding:1px 8px;border-radius:10px;">×${i.qty}</span>`:""}
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <span style="font-size:15px;font-weight:500;${i.packed?"text-decoration:line-through;":""}">
+                ${esc(i.text)}${i.qty>1?`<span style="font-size:12px;color:#8ba3c8;background:rgba(255,255,255,0.08);padding:1px 8px;border-radius:10px;margin-left:4px;">×${i.qty}</span>`:""}
+              </span>
+              <button class="toggle-own icon-btn" data-id="${i.id}" data-own="${i.ownership}" style="display:inline-flex;align-items:center;gap:3px;background:${isBuy?"rgba(232,168,56,0.15)":"rgba(91,173,143,0.13)"};color:${ac};border:1px solid ${isBuy?"rgba(232,168,56,0.4)":"rgba(91,173,143,0.4)"};border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">
+                ${isBuy?"購入が必要 ✓":"すでに持ってる"}
+              </button>
             </div>
             <div style="font-size:12px;color:#5a7a9a;margin-top:5px;display:flex;gap:8px;flex-wrap:wrap;">
               <span style="color:${cat.color};">${cat.label}</span>
-              <span style="display:inline-flex;align-items:center;background:${isBuy?"rgba(232,168,56,0.15)":"rgba(91,173,143,0.13)"};color:${isBuy?"#E8A838":"#5BAD8F"};border:1px solid ${isBuy?"rgba(232,168,56,0.3)":"rgba(91,173,143,0.3)"};border-radius:20px;padding:1px 9px;font-size:11px;font-weight:600;">${isBuy?"購入が必要":"持っている"}</span>
               ${i.brand?`<span style="color:#8ba3c8;">🏷️ ${esc(i.brand)}</span>`:""}
               ${i.note?`<span style="color:#5a7a9a;">✍️ ${esc(i.note)}</span>`:""}
             </div>
           </div>
-          <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;flex-direction:column;">
-            ${isBuy&&!i.packed?`<button class="bought-btn icon-btn" data-id="${i.id}" style="background:rgba(91,173,143,0.15);border:1px solid rgba(91,173,143,0.35);border-radius:8px;color:#5BAD8F;font-size:11px;font-weight:600;padding:4px 8px;white-space:nowrap;">購入済み ✓</button>`:""}
-            <div style="display:flex;align-items:center;gap:6px;">
-              <div class="member-badge" style="background:${mem.color};">${mem.label.slice(0,2)}</div>
-              <button class="edit-item icon-btn" data-type="item" data-id="${i.id}">✏️</button>
-              <button class="del-item  icon-btn" data-type="item" data-id="${i.id}">✕</button>
-            </div>
+          <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+            <div class="member-badge" style="background:${mem.color};">${mem.label.slice(0,2)}</div>
+            <button class="edit-item icon-btn" data-type="item" data-id="${i.id}">✏️</button>
+            <button class="del-item  icon-btn" data-type="item" data-id="${i.id}">✕</button>
           </div>
         </div>`;
       }).join("");
@@ -529,7 +530,7 @@ function detailHTML(trip) {
         const done  = todos.filter(t=>t.category===c.id&&t.done).length;
         return makeCatCard(c, total, done, total-done);
       }).join("");
-      return `<div style="display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px;">${cards}</div>`;
+      return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">${cards}</div>`;
     } else {
       const allCats = (trip.categories||defaultCategories()).item;
       const cards = allCats.map(c => {
@@ -537,7 +538,7 @@ function detailHTML(trip) {
         const packed = items.filter(i=>i.category===c.id&&i.packed).length;
         return makeCatCard(c, total, packed, total-packed);
       }).join("");
-      return `<div style="display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px;">${cards}</div>`;
+      return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">${cards}</div>`;
     }
   };
 
@@ -571,7 +572,7 @@ function detailHTML(trip) {
       <div style="margin-bottom:14px;">
         <div style="display:flex;gap:8px;">
           <div class="field" style="flex:1;"><label>対象者</label><select id="fil-member"><option value="all_members"${detail.filterMember==="all_members"?" selected":""}>全員</option>${MEMBERS.map(m=>`<option value="${m.id}"${m.id===detail.filterMember?" selected":""}>${m.label}</option>`).join("")}</select></div>
-          ${detail.tab==="item"?`<div class="field" style="flex:1;"><label>状態</label><select id="fil-ownership"><option value="all"${detail.filterOwnership==="all"?" selected":""}>すべて</option><option value="owned"${detail.filterOwnership==="owned"?" selected":""}>持っている</option><option value="buy"${detail.filterOwnership==="buy"?" selected":""}>購入が必要</option></select></div>`:""}
+          ${detail.tab==="item"?`<div class="field" style="flex:1;"><label>購入状況</label><select id="fil-ownership"><option value="all"${detail.filterOwnership==="all"?" selected":""}>すべて</option><option value="owned"${detail.filterOwnership==="owned"?" selected":""}>持っている</option><option value="buy"${detail.filterOwnership==="buy"?" selected":""}>購入が必要</option></select></div>`:""}
         </div>
       </div>
       ${detail.tab==="todo" ? todoListHTML : itemListHTML}
@@ -626,8 +627,13 @@ function bindDetail(trip) {
   document.querySelectorAll(".check-square").forEach(el=>{
     el.addEventListener("click", ()=>update({items:items.map(i=>i.id===el.dataset.id?{...i,packed:!i.packed}:i)}));
   });
-  document.querySelectorAll(".bought-btn").forEach(el=>{
-    el.addEventListener("click", ()=>update({items:items.map(i=>i.id===el.dataset.id?{...i,ownership:"owned"}:i)}));
+  // 所有状態トグル（購入が必要 ↔ すでに持ってる）
+  document.querySelectorAll(".toggle-own").forEach(el=>{
+    el.addEventListener("click", (e)=>{
+      e.stopPropagation();
+      const newOwn = el.dataset.own==="buy" ? "owned" : "buy";
+      update({items:items.map(i=>i.id===el.dataset.id?{...i,ownership:newOwn}:i)});
+    });
   });
 
   // 編集・削除
