@@ -56,6 +56,7 @@
     .modal-handle { display: none; }
     .qty-row { display: flex; align-items: center; gap: 16px; }
     .qty-btn { width: 36px; height: 36px; border-radius: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); color: #e8f0fe; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .cat-card { flex-shrink:0; min-width:72px; padding:10px 12px; border-radius:12px; border:1.5px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.04); text-align:center; transition:all 0.18s; }
   </style>
 </head>
 <body>
@@ -300,7 +301,7 @@ function bindList() {
       detail = { tab:"todo", showForm:false, showCatMgr:false, showTripEdit:false, editId:null,
         filterMember:"all_members", filterCat:"all", filterOwnership:"all",
         newName:t.name, newDateFrom:t.dateFrom||"", newDateTo:t.dateTo||"",
-        form:{text:"",category:"",member:"naoki",note:"",qty:1,ownership:"owned",dueDate:""},
+        form:{text:"",category:"",member:"naoki",note:"",qty:1,ownership:"owned",dueDate:"",brand:""},
         catLabel:"", itemMode:"new", existingSearch:"", saving:false };
       render();
     });
@@ -440,6 +441,7 @@ function detailHTML(trip) {
           <span id="qty-val" style="font-size:18px;font-weight:700;min-width:32px;text-align:center;">${detail.form.qty}</span>
           <button class="qty-btn" id="qty-plus">＋</button>
         </div></div>
+        <div class="field"><input type="text" id="f-brand" placeholder="🏷️ ブランド名（任意）..." value="${esc(detail.form.brand||'')}"></div>
         <div class="field"><input type="text" id="f-note" placeholder="✍️ メモ（任意）..." value="${esc(detail.form.note||'')}"></div>`:""}
       <div style="display:flex;gap:10px;margin-top:4px;">
         <button class="btn-primary" id="f-submit" style="flex:1;">${detail.editId?"更新":"追加"}</button>
@@ -488,6 +490,7 @@ function detailHTML(trip) {
             <div style="font-size:12px;color:#5a7a9a;margin-top:5px;display:flex;gap:8px;flex-wrap:wrap;">
               <span style="color:${cat.color};">${cat.label}</span>
               <span style="display:inline-flex;align-items:center;background:${isBuy?"rgba(232,168,56,0.15)":"rgba(91,173,143,0.13)"};color:${isBuy?"#E8A838":"#5BAD8F"};border:1px solid ${isBuy?"rgba(232,168,56,0.3)":"rgba(91,173,143,0.3)"};border-radius:20px;padding:1px 9px;font-size:11px;font-weight:600;">${isBuy?"購入が必要":"持っている"}</span>
+              ${i.brand?`<span style="color:#8ba3c8;">🏷️ ${esc(i.brand)}</span>`:""}
               ${i.note?`<span style="color:#5a7a9a;">✍️ ${esc(i.note)}</span>`:""}
             </div>
           </div>
@@ -502,24 +505,55 @@ function detailHTML(trip) {
         </div>`;
       }).join("");
 
-  // 持ち物サマリー
-  const ownedCount = items.filter(i=>i.ownership==="owned").length;
-  const buyCount   = items.filter(i=>i.ownership==="buy").length;
-  const buyDone    = items.filter(i=>i.ownership==="buy"&&i.packed).length;
-  const summaryHTML = detail.tab==="item" ? `
-    <div style="display:flex;gap:10px;margin-bottom:16px;">
-      <div class="card" style="flex:1;padding:14px 16px;cursor:pointer;${detail.filterOwnership==='owned'?'background:rgba(91,173,143,0.18);border-color:rgba(91,173,143,0.5);':''}" id="sum-owned">
-        <div style="font-size:20px;margin-bottom:6px;">✅</div>
-        <div style="font-size:22px;font-weight:800;color:${detail.filterOwnership==='owned'?'#5BAD8F':'#e8f0fe'};line-height:1;">${ownedCount}</div>
-        <div style="font-size:12px;color:#8ba3c8;margin-top:4px;">すでに持っている</div>
-      </div>
-      <div class="card" style="flex:1;padding:14px 16px;cursor:pointer;${detail.filterOwnership==='buy'?'background:rgba(232,168,56,0.18);border-color:rgba(232,168,56,0.5);':''}" id="sum-buy">
-        <div style="font-size:20px;margin-bottom:6px;">🛒</div>
-        <div style="font-size:22px;font-weight:800;color:${detail.filterOwnership==='buy'?'#E8A838':'#e8f0fe'};line-height:1;">${buyCount}</div>
-        <div style="font-size:12px;color:#8ba3c8;margin-top:4px;">購入が必要</div>
-        ${buyCount>0?`<div style="font-size:11px;color:#5a7a9a;margin-top:3px;">購入済み ${buyDone}/${buyCount}</div>`:""}
-      </div>
-    </div>` : "";
+  // カテゴリー別ダッシュボード
+  const makeDashboard = () => {
+    if (detail.tab === "todo") {
+      // To-Do: カテゴリー別タスク数カード
+      const allCats = (trip.categories||defaultCategories()).todo;
+      const cards = allCats.map(c => {
+        const total = todos.filter(t=>t.category===c.id).length;
+        const done  = todos.filter(t=>t.category===c.id&&t.done).length;
+        const isActive = detail.filterCat === c.id;
+        return `<div class="cat-card" data-catid="${c.id}" style="border-color:${isActive?c.color:"rgba(255,255,255,0.1)"};background:${isActive?`${c.color}22`:"rgba(255,255,255,0.04)"};cursor:pointer;">
+          <div style="font-size:18px;font-weight:800;color:${isActive?c.color:"#e8f0fe"};line-height:1;">${total}</div>
+          <div style="font-size:11px;color:${isActive?c.color:"#8ba3c8"};margin-top:4px;font-weight:${isActive?700:400};">${c.label}</div>
+          ${total>0?`<div style="font-size:10px;color:#5a7a9a;margin-top:2px;">${done}/${total} 完了</div>`:""}
+        </div>`;
+      }).join("");
+      return `<div style="display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px;">${cards}</div>`;
+    } else {
+      // 持ち物: 上段に所有状態カード、下段にカテゴリーカード
+      const ownedCount = items.filter(i=>i.ownership==="owned").length;
+      const buyCount   = items.filter(i=>i.ownership==="buy").length;
+      const buyDone    = items.filter(i=>i.ownership==="buy"&&i.packed).length;
+      const allCats = (trip.categories||defaultCategories()).item;
+      const catCards = allCats.map(c => {
+        const total = items.filter(i=>i.category===c.id).length;
+        const packed = items.filter(i=>i.category===c.id&&i.packed).length;
+        const isActive = detail.filterCat === c.id;
+        return `<div class="cat-card" data-catid="${c.id}" style="border-color:${isActive?c.color:"rgba(255,255,255,0.1)"};background:${isActive?`${c.color}22`:"rgba(255,255,255,0.04)"};cursor:pointer;">
+          <div style="font-size:18px;font-weight:800;color:${isActive?c.color:"#e8f0fe"};line-height:1;">${total}</div>
+          <div style="font-size:11px;color:${isActive?c.color:"#8ba3c8"};margin-top:4px;font-weight:${isActive?700:400};">${c.label}</div>
+          ${total>0?`<div style="font-size:10px;color:#5a7a9a;margin-top:2px;">${packed}/${total} 完了</div>`:""}
+        </div>`;
+      }).join("");
+      return `
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <div class="card" style="flex:1;padding:12px 14px;cursor:pointer;${detail.filterOwnership==='owned'?'background:rgba(91,173,143,0.18);border-color:rgba(91,173,143,0.5);':''}" id="sum-owned">
+            <div style="font-size:20px;margin-bottom:4px;">✅</div>
+            <div style="font-size:20px;font-weight:800;color:${detail.filterOwnership==='owned'?'#5BAD8F':'#e8f0fe'};line-height:1;">${ownedCount}</div>
+            <div style="font-size:11px;color:#8ba3c8;margin-top:3px;">すでに持っている</div>
+          </div>
+          <div class="card" style="flex:1;padding:12px 14px;cursor:pointer;${detail.filterOwnership==='buy'?'background:rgba(232,168,56,0.18);border-color:rgba(232,168,56,0.5);':''}" id="sum-buy">
+            <div style="font-size:20px;margin-bottom:4px;">🛒</div>
+            <div style="font-size:20px;font-weight:800;color:${detail.filterOwnership==='buy'?'#E8A838':'#e8f0fe'};line-height:1;">${buyCount}</div>
+            <div style="font-size:11px;color:#8ba3c8;margin-top:3px;">購入が必要</div>
+            ${buyCount>0?`<div style="font-size:10px;color:#5a7a9a;margin-top:2px;">購入済み ${buyDone}/${buyCount}</div>`:""}
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px;">${catCards}</div>`;
+    }
+  };
 
   return `<div class="screen">
     <div class="sticky-header">
@@ -547,10 +581,9 @@ function detailHTML(trip) {
       </div>
     </div>
     <div class="content">
-      ${summaryHTML}
-      <div style="display:flex;gap:10px;margin-bottom:16px;">
-        <div class="field" style="flex:1;"><label>対象者</label><select id="fil-member"><option value="all_members"${detail.filterMember==="all_members"?" selected":""}>全員</option>${MEMBERS.map(m=>`<option value="${m.id}"${m.id===detail.filterMember?" selected":""}>${m.label}</option>`).join("")}</select></div>
-        <div class="field" style="flex:1;"><label>カテゴリー</label><select id="fil-cat"><option value="all"${detail.filterCat==="all"?" selected":""}>すべて</option>${cats.map(c=>`<option value="${c.id}"${c.id===detail.filterCat?" selected":""}>${c.label}</option>`).join("")}</select></div>
+      ${makeDashboard()}
+      <div style="margin-bottom:14px;">
+        <div class="field"><label>対象者</label><select id="fil-member"><option value="all_members"${detail.filterMember==="all_members"?" selected":""}>全員</option>${MEMBERS.map(m=>`<option value="${m.id}"${m.id===detail.filterMember?" selected":""}>${m.label}</option>`).join("")}</select></div>
       </div>
       ${detail.tab==="todo" ? todoListHTML : itemListHTML}
       ${!detail.showCatMgr?`
@@ -579,9 +612,11 @@ function bindDetail(trip) {
   document.getElementById("tab-todo")?.addEventListener("click", ()=>{ detail.tab="todo"; detail.filterCat="all"; detail.showForm=false; detail.showCatMgr=false; render(); });
   document.getElementById("tab-item")?.addEventListener("click", ()=>{ detail.tab="item"; detail.filterCat="all"; detail.showForm=false; detail.showCatMgr=false; render(); });
   document.getElementById("fil-member")?.addEventListener("change", e=>{ detail.filterMember=e.target.value; render(); });
-  document.getElementById("fil-cat")?.addEventListener("change",    e=>{ detail.filterCat=e.target.value; render(); });
   document.getElementById("sum-owned")?.addEventListener("click", ()=>{ detail.filterOwnership=detail.filterOwnership==="owned"?"all":"owned"; render(); });
   document.getElementById("sum-buy")?.addEventListener("click",   ()=>{ detail.filterOwnership=detail.filterOwnership==="buy"?"all":"buy"; render(); });
+  document.querySelectorAll(".cat-card").forEach(el=>{
+    el.addEventListener("click", ()=>{ detail.filterCat=detail.filterCat===el.dataset.catid?"all":el.dataset.catid; render(); });
+  });
 
   // 旅行名編集
   document.getElementById("trip-edit-btn")?.addEventListener("click", ()=>{ detail.showTripEdit=!detail.showTripEdit; detail.showForm=false; detail.showCatMgr=false; render(); });
@@ -613,7 +648,7 @@ function bindDetail(trip) {
       const type=el.dataset.type, id=el.dataset.id;
       const src = type==="todo" ? todos.find(t=>t.id===id) : items.find(i=>i.id===id);
       if (!src) return;
-      detail.form={text:src.text,category:src.category,member:src.member,note:src.note||"",qty:src.qty||1,ownership:src.ownership||"owned",dueDate:src.dueDate||""};
+      detail.form={text:src.text,category:src.category,member:src.member,note:src.note||"",qty:src.qty||1,ownership:src.ownership||"owned",dueDate:src.dueDate||"",brand:src.brand||""};
       detail.editId=id; detail.showForm=true; detail.showCatMgr=false; detail.showTripEdit=false;
       render();
     });
@@ -628,7 +663,7 @@ function bindDetail(trip) {
 
   // フォームを開く
   document.getElementById("form-open")?.addEventListener("click", ()=>{
-    detail.form={text:"",category:cats[0]?.id||"",member:"naoki",note:"",qty:1,ownership:"owned",dueDate:""};
+    detail.form={text:"",category:cats[0]?.id||"",member:"naoki",note:"",qty:1,ownership:"owned",dueDate:"",brand:""};
     detail.editId=null; detail.showForm=true; detail.showCatMgr=false; detail.showTripEdit=false; detail.itemMode="new"; detail.existingSearch="";
     render();
   });
@@ -683,6 +718,7 @@ function bindDetail(trip) {
     const member = document.getElementById("f-member")?.value || "naoki";
     const note   = document.getElementById("f-note")?.value   || "";
     const dueDate = document.getElementById("f-due")?.value   || "";
+    const brand  = document.getElementById("f-brand")?.value  || "";
     if (detail.tab==="todo") {
       const next = detail.editId
         ? todos.map(t=>t.id===detail.editId?{...t,text,category:cat,member,note,dueDate}:t)
@@ -690,12 +726,12 @@ function bindDetail(trip) {
       await update({todos:next});
     } else {
       const next = detail.editId
-        ? items.map(i=>i.id===detail.editId?{...i,text,category:cat,member,note,qty:detail.form.qty,ownership:detail.form.ownership}:i)
-        : [...items,{id:uid(),text,category:cat,member,note,qty:detail.form.qty,ownership:detail.form.ownership,packed:false}];
+        ? items.map(i=>i.id===detail.editId?{...i,text,category:cat,member,note,brand,qty:detail.form.qty,ownership:detail.form.ownership}:i)
+        : [...items,{id:uid(),text,category:cat,member,note,brand,qty:detail.form.qty,ownership:detail.form.ownership,packed:false}];
       await update({items:next});
     }
     detail.showForm=false; detail.editId=null;
-    detail.form={text:"",category:"",member:"naoki",note:"",qty:1,ownership:"owned",dueDate:""};
+    detail.form={text:"",category:"",member:"naoki",note:"",qty:1,ownership:"owned",dueDate:"",brand:""};
   });
 
   // カテゴリー追加・削除
