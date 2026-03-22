@@ -56,7 +56,11 @@
     .modal-handle { display: none; }
     .qty-row { display: flex; align-items: center; gap: 16px; }
     .qty-btn { width: 36px; height: 36px; border-radius: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); color: #e8f0fe; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .cat-card { flex-shrink:0; min-width:72px; padding:10px 12px; border-radius:12px; border:1.5px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.04); text-align:center; transition:all 0.18s; }
+    .cat-card { flex-shrink:0; min-width:130px; padding:12px 14px; border-radius:12px; border:1.5px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.04); transition:all 0.18s; cursor:pointer; display:flex; align-items:center; gap:10px; }
+    .cat-card-num { font-size:28px; font-weight:800; line-height:1; flex-shrink:0; min-width:32px; }
+    .cat-card-info { display:flex; flex-direction:column; gap:2px; }
+    .cat-card-name { font-size:12px; font-weight:600; }
+    .cat-card-stat { font-size:11px; color:#5a7a9a; display:flex; justify-content:space-between; gap:8px; }
   </style>
 </head>
 <body>
@@ -507,51 +511,33 @@ function detailHTML(trip) {
 
   // カテゴリー別ダッシュボード
   const makeDashboard = () => {
+    const makeCatCard = (c, total, done, notDone) => {
+      const isActive = detail.filterCat === c.id;
+      return `<div class="cat-card" data-catid="${c.id}" style="border-color:${isActive?c.color:"rgba(255,255,255,0.1)"};background:${isActive?`${c.color}22`:"rgba(255,255,255,0.04)"};">
+        <div class="cat-card-num" style="color:${isActive?c.color:"#e8f0fe"};">${total}</div>
+        <div class="cat-card-info">
+          <div class="cat-card-name" style="color:${isActive?c.color:"#8ba3c8"};">${c.label}</div>
+          ${total>0?`<div class="cat-card-stat"><span>完了済み</span><span style="color:${c.color};font-weight:600;">${done}</span></div>
+          <div class="cat-card-stat"><span>未完了</span><span style="font-weight:600;">${notDone}</span></div>`:""}
+        </div>
+      </div>`;
+    };
     if (detail.tab === "todo") {
-      // To-Do: カテゴリー別タスク数カード
       const allCats = (trip.categories||defaultCategories()).todo;
       const cards = allCats.map(c => {
         const total = todos.filter(t=>t.category===c.id).length;
         const done  = todos.filter(t=>t.category===c.id&&t.done).length;
-        const isActive = detail.filterCat === c.id;
-        return `<div class="cat-card" data-catid="${c.id}" style="border-color:${isActive?c.color:"rgba(255,255,255,0.1)"};background:${isActive?`${c.color}22`:"rgba(255,255,255,0.04)"};cursor:pointer;">
-          <div style="font-size:18px;font-weight:800;color:${isActive?c.color:"#e8f0fe"};line-height:1;">${total}</div>
-          <div style="font-size:11px;color:${isActive?c.color:"#8ba3c8"};margin-top:4px;font-weight:${isActive?700:400};">${c.label}</div>
-          ${total>0?`<div style="font-size:10px;color:#5a7a9a;margin-top:2px;">${done}/${total} 完了</div>`:""}
-        </div>`;
+        return makeCatCard(c, total, done, total-done);
       }).join("");
       return `<div style="display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px;">${cards}</div>`;
     } else {
-      // 持ち物: 上段に所有状態カード、下段にカテゴリーカード
-      const ownedCount = items.filter(i=>i.ownership==="owned").length;
-      const buyCount   = items.filter(i=>i.ownership==="buy").length;
-      const buyDone    = items.filter(i=>i.ownership==="buy"&&i.packed).length;
       const allCats = (trip.categories||defaultCategories()).item;
-      const catCards = allCats.map(c => {
-        const total = items.filter(i=>i.category===c.id).length;
+      const cards = allCats.map(c => {
+        const total  = items.filter(i=>i.category===c.id).length;
         const packed = items.filter(i=>i.category===c.id&&i.packed).length;
-        const isActive = detail.filterCat === c.id;
-        return `<div class="cat-card" data-catid="${c.id}" style="border-color:${isActive?c.color:"rgba(255,255,255,0.1)"};background:${isActive?`${c.color}22`:"rgba(255,255,255,0.04)"};cursor:pointer;">
-          <div style="font-size:18px;font-weight:800;color:${isActive?c.color:"#e8f0fe"};line-height:1;">${total}</div>
-          <div style="font-size:11px;color:${isActive?c.color:"#8ba3c8"};margin-top:4px;font-weight:${isActive?700:400};">${c.label}</div>
-          ${total>0?`<div style="font-size:10px;color:#5a7a9a;margin-top:2px;">${packed}/${total} 完了</div>`:""}
-        </div>`;
+        return makeCatCard(c, total, packed, total-packed);
       }).join("");
-      return `
-        <div style="display:flex;gap:8px;margin-bottom:10px;">
-          <div class="card" style="flex:1;padding:12px 14px;cursor:pointer;${detail.filterOwnership==='owned'?'background:rgba(91,173,143,0.18);border-color:rgba(91,173,143,0.5);':''}" id="sum-owned">
-            <div style="font-size:20px;margin-bottom:4px;">✅</div>
-            <div style="font-size:20px;font-weight:800;color:${detail.filterOwnership==='owned'?'#5BAD8F':'#e8f0fe'};line-height:1;">${ownedCount}</div>
-            <div style="font-size:11px;color:#8ba3c8;margin-top:3px;">すでに持っている</div>
-          </div>
-          <div class="card" style="flex:1;padding:12px 14px;cursor:pointer;${detail.filterOwnership==='buy'?'background:rgba(232,168,56,0.18);border-color:rgba(232,168,56,0.5);':''}" id="sum-buy">
-            <div style="font-size:20px;margin-bottom:4px;">🛒</div>
-            <div style="font-size:20px;font-weight:800;color:${detail.filterOwnership==='buy'?'#E8A838':'#e8f0fe'};line-height:1;">${buyCount}</div>
-            <div style="font-size:11px;color:#8ba3c8;margin-top:3px;">購入が必要</div>
-            ${buyCount>0?`<div style="font-size:10px;color:#5a7a9a;margin-top:2px;">購入済み ${buyDone}/${buyCount}</div>`:""}
-          </div>
-        </div>
-        <div style="display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px;">${catCards}</div>`;
+      return `<div style="display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px;">${cards}</div>`;
     }
   };
 
@@ -583,7 +569,10 @@ function detailHTML(trip) {
     <div class="content">
       ${makeDashboard()}
       <div style="margin-bottom:14px;">
-        <div class="field"><label>対象者</label><select id="fil-member"><option value="all_members"${detail.filterMember==="all_members"?" selected":""}>全員</option>${MEMBERS.map(m=>`<option value="${m.id}"${m.id===detail.filterMember?" selected":""}>${m.label}</option>`).join("")}</select></div>
+        <div style="display:flex;gap:8px;">
+          <div class="field" style="flex:1;"><label>対象者</label><select id="fil-member"><option value="all_members"${detail.filterMember==="all_members"?" selected":""}>全員</option>${MEMBERS.map(m=>`<option value="${m.id}"${m.id===detail.filterMember?" selected":""}>${m.label}</option>`).join("")}</select></div>
+          ${detail.tab==="item"?`<div class="field" style="flex:1;"><label>状態</label><select id="fil-ownership"><option value="all"${detail.filterOwnership==="all"?" selected":""}>すべて</option><option value="owned"${detail.filterOwnership==="owned"?" selected":""}>持っている</option><option value="buy"${detail.filterOwnership==="buy"?" selected":""}>購入が必要</option></select></div>`:""}
+        </div>
       </div>
       ${detail.tab==="todo" ? todoListHTML : itemListHTML}
       ${!detail.showCatMgr?`
@@ -612,8 +601,7 @@ function bindDetail(trip) {
   document.getElementById("tab-todo")?.addEventListener("click", ()=>{ detail.tab="todo"; detail.filterCat="all"; detail.showForm=false; detail.showCatMgr=false; render(); });
   document.getElementById("tab-item")?.addEventListener("click", ()=>{ detail.tab="item"; detail.filterCat="all"; detail.showForm=false; detail.showCatMgr=false; render(); });
   document.getElementById("fil-member")?.addEventListener("change", e=>{ detail.filterMember=e.target.value; render(); });
-  document.getElementById("sum-owned")?.addEventListener("click", ()=>{ detail.filterOwnership=detail.filterOwnership==="owned"?"all":"owned"; render(); });
-  document.getElementById("sum-buy")?.addEventListener("click",   ()=>{ detail.filterOwnership=detail.filterOwnership==="buy"?"all":"buy"; render(); });
+  document.getElementById("fil-ownership")?.addEventListener("change", e=>{ detail.filterOwnership=e.target.value; render(); });
   document.querySelectorAll(".cat-card").forEach(el=>{
     el.addEventListener("click", ()=>{ detail.filterCat=detail.filterCat===el.dataset.catid?"all":el.dataset.catid; render(); });
   });
