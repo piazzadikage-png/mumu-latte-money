@@ -305,7 +305,7 @@ function bindList() {
       detail = { tab:"todo", showForm:false, showCatMgr:false, showTripEdit:false, editId:null,
         filterMember:"all_members", filterCat:"all", filterOwnership:"all",
         newName:t.name, newDateFrom:t.dateFrom||"", newDateTo:t.dateTo||"",
-        form:{text:"",category:"",member:"naoki",note:"",qty:1,ownership:"owned",dueDate:"",brand:""},
+        form:{text:"",category:"",member:"naoki",note:"",qty:1,ownership:"owned",dueDate:"",brand:"",url:""},
         catLabel:"", itemMode:"new", existingSearch:"", saving:false };
       render();
     });
@@ -434,6 +434,7 @@ function detailHTML(trip) {
         <div class="field"><label>対象者</label><select id="f-member" style="width:90px;">${MEMBERS.map(m=>`<option value="${m.id}"${m.id===detail.form.member?" selected":""}>${m.label}</option>`).join("")}</select></div>
       </div>
       ${!isItem?`<div class="field"><label>実施日（任意）</label><input type="date" id="f-due" value="${detail.form.dueDate||''}" style="color-scheme:dark;"></div>`:""}
+      ${!isItem?`<div class="field"><input type="text" id="f-url" placeholder="🔗 URL（任意）..." value="${esc(detail.form.url||'')}"></div>`:""}
       ${!isItem?`<div class="field"><input type="text" id="f-note" placeholder="✍️ メモ（任意）..." value="${esc(detail.form.note||'')}"></div>`:""}
       ${isItem?`<div style="margin-bottom:12px;"><div style="font-size:12px;color:#8ba3c8;margin-bottom:8px;">持ち物の状態</div>
         <div style="display:flex;gap:8px;">
@@ -467,6 +468,7 @@ function detailHTML(trip) {
             <div style="font-size:12px;color:#5a7a9a;margin-top:3px;display:flex;gap:8px;flex-wrap:wrap;">
               <span style="color:${cat.color};">${cat.label}</span>
               ${t.dueDate?`<span>📅 ${fmt(t.dueDate)}</span>`:""}
+              ${t.url?`<a href="${esc(t.url)}" target="_blank" rel="noopener noreferrer" style="color:#4A90D9;text-decoration:none;">🔗 リンク</a>`:""}
               ${t.note?`<span>✍️ ${esc(t.note)}</span>`:""}
             </div>
           </div>
@@ -640,7 +642,7 @@ function bindDetail(trip) {
       const type=el.dataset.type, id=el.dataset.id;
       const src = type==="todo" ? todos.find(t=>t.id===id) : items.find(i=>i.id===id);
       if (!src) return;
-      detail.form={text:src.text,category:src.category,member:src.member,note:src.note||"",qty:src.qty||1,ownership:src.ownership||"owned",dueDate:src.dueDate||"",brand:src.brand||""};
+      detail.form={text:src.text,category:src.category,member:src.member,note:src.note||"",qty:src.qty||1,ownership:src.ownership||"owned",dueDate:src.dueDate||"",brand:src.brand||"",url:src.url||""};
       detail.editId=id; detail.showForm=true; detail.showCatMgr=false; detail.showTripEdit=false;
       render();
     });
@@ -655,7 +657,7 @@ function bindDetail(trip) {
 
   // フォームを開く
   document.getElementById("form-open")?.addEventListener("click", ()=>{
-    detail.form={text:"",category:cats[0]?.id||"",member:"naoki",note:"",qty:1,ownership:"owned",dueDate:"",brand:""};
+    detail.form={text:"",category:cats[0]?.id||"",member:"naoki",note:"",qty:1,ownership:"owned",dueDate:"",brand:"",url:""};
     detail.editId=null; detail.showForm=true; detail.showCatMgr=false; detail.showTripEdit=false; detail.itemMode="new"; detail.existingSearch="";
     render();
   });
@@ -695,8 +697,16 @@ function bindDetail(trip) {
   });
 
   // 所有状態ボタン
-  document.getElementById("own-owned")?.addEventListener("click", ()=>{ detail.form.ownership="owned"; render(); });
-  document.getElementById("own-buy")?.addEventListener("click",   ()=>{ detail.form.ownership="buy";   render(); });
+  document.getElementById("own-owned")?.addEventListener("click", ()=>{ 
+    detail.form.ownership="owned"; 
+    document.querySelectorAll(".ownership-btn").forEach(b=>b.className="ownership-btn");
+    document.getElementById("own-owned").className="ownership-btn active-owned";
+  });
+  document.getElementById("own-buy")?.addEventListener("click", ()=>{ 
+    detail.form.ownership="buy"; 
+    document.querySelectorAll(".ownership-btn").forEach(b=>b.className="ownership-btn");
+    document.getElementById("own-buy").className="ownership-btn active-buy";
+  });
 
   // 数量
   document.getElementById("qty-minus")?.addEventListener("click", ()=>{ detail.form.qty=Math.max(1,detail.form.qty-1); document.getElementById("qty-val").textContent=detail.form.qty; });
@@ -710,11 +720,12 @@ function bindDetail(trip) {
     const member = document.getElementById("f-member")?.value || "naoki";
     const note   = document.getElementById("f-note")?.value   || "";
     const dueDate = document.getElementById("f-due")?.value   || "";
+    const url    = document.getElementById("f-url")?.value    || "";
     const brand  = document.getElementById("f-brand")?.value  || "";
     if (detail.tab==="todo") {
       const next = detail.editId
-        ? todos.map(t=>t.id===detail.editId?{...t,text,category:cat,member,note,dueDate}:t)
-        : [...todos,{id:uid(),text,category:cat,member,note,dueDate,done:false}];
+        ? todos.map(t=>t.id===detail.editId?{...t,text,category:cat,member,note,dueDate,url}:t)
+        : [...todos,{id:uid(),text,category:cat,member,note,dueDate,url,done:false}];
       await update({todos:next});
     } else {
       const next = detail.editId
@@ -723,7 +734,7 @@ function bindDetail(trip) {
       await update({items:next});
     }
     detail.showForm=false; detail.editId=null;
-    detail.form={text:"",category:"",member:"naoki",note:"",qty:1,ownership:"owned",dueDate:"",brand:""};
+    detail.form={text:"",category:"",member:"naoki",note:"",qty:1,ownership:"owned",dueDate:"",brand:"",url:""};
   });
 
   // カテゴリー追加・削除
