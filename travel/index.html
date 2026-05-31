@@ -141,6 +141,7 @@ const fmt = (d) => {
 // ═══════════════════════════════════════
 let user  = null;
 let trips = [];
+let sharedCategories = null; // 全旅行共通のPackingListカテゴリー
 let selectedTripId = null;
 
 // 旅行一覧フォーム
@@ -179,7 +180,15 @@ function startListener() {
       .sort((a,b) => (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
     render();
   });
+  // 共通カテゴリーのリスナー
+  onSnapshot(doc(db,"settings","categories"), (snap) => {
+    if (snap.exists()) sharedCategories = snap.data();
+    render();
+  });
 }
+
+// 共通カテゴリーを保存
+const saveSharedCategories = (cats) => setDoc(doc(db,"settings","categories"), cats);
 
 // ═══════════════════════════════════════
 // レンダリング
@@ -429,7 +438,8 @@ function bindList() {
 // ═══════════════════════════════════════
 function detailHTML(trip) {
   const todos = trip.todos||[], items = trip.items||[];
-  const cats  = (trip.categories||defaultCategories())[detail.tab]||[];
+  const itemCats = sharedCategories?.item || (trip.categories||defaultCategories()).item;
+  const cats  = detail.tab==="item" ? itemCats : (trip.categories||defaultCategories()).todo;
   const getCat = id => cats.find(c=>c.id===id)||{label:id,color:"#888"};
   const getMem = id => MEMBERS.find(m=>m.id===id)||MEMBERS[0];
 
@@ -496,7 +506,7 @@ function detailHTML(trip) {
           filtered.map(i=>{
             const cat=(trip.categories||defaultCategories()).item.find(c=>c.id===i.category);
             return `<div class="ex-item" data-text="${esc(i.text)}" data-catid="${i.category}" data-member="${i.member}" data-qty="${i.qty||1}" data-own="${i.ownership||'owned'}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.08);cursor:pointer;">
-              <div style="width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,0.2);flex-shrink:0;"></div>
+              <div class="ex-check" style="width:20px;height:20px;border-radius:6px;border:2px solid rgba(255,255,255,0.2);flex-shrink:0;display:flex;align-items:center;justify-content:center;"></div>
               <div style="flex:1;min-width:0;">
                 <div style="font-size:14px;font-weight:500;">${esc(i.text)}${i.qty>1?` <span style="font-size:11px;color:#8ba3c8;">×${i.qty}</span>`:""}</div>
                 <div style="font-size:11px;color:#5a7a9a;margin-top:2px;">${cat?`<span style="color:${cat.color};">${cat.label}</span> `:""}${i._cur?"この旅行":"← "+esc(i._from)}</div>
@@ -505,7 +515,7 @@ function detailHTML(trip) {
           }).join("")}
         </div>
         <div style="display:flex;gap:10px;margin-top:14px;">
-          <button class="btn-primary" id="ex-add" style="flex:1;opacity:0.4;" disabled>追加する</button>
+          <button class="btn-primary" id="ex-add" style="flex:1;opacity:0.4;" disabled>追加する（0件）</button>
           <button class="btn-ghost" id="form-cancel">キャンセル</button>
         </div>`;
       innerHTML = `
@@ -538,7 +548,7 @@ function detailHTML(trip) {
       </div>
       ${!isItem?`<div class="field"><label>実施日（任意）</label><input type="date" id="f-due" value="${detail.form.dueDate||''}" style="color-scheme:dark;"></div>`:""}
       ${!isItem?`<div class="field"><input type="text" id="f-url" placeholder="🔗 URL（任意）..." value="${esc(detail.form.url||'')}"></div>`:""}
-      ${!isItem?`<div class="field"><label>💴 金額（任意）</label><button type="button" id="open-calc" onclick="openCalc()" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.07);color:#e8f0fe;font-size:14px;text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;"><span id="price-display">${detail.form.price?'¥'+Number(detail.form.price).toLocaleString()+'円':'タップして入力...'}</span><span style="font-size:16px;">🧮</span></button></div>`:""}
+      ${!isItem?`<div class="field"><label>💴 金額（任意）</label><button type="button" id="open-calc" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.07);color:#e8f0fe;font-size:14px;text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;"><span id="price-display">${detail.form.price?'¥'+Number(detail.form.price).toLocaleString()+'円':'タップして入力...'}</span><span style="font-size:16px;">🧮</span></button></div>`:""}
       ${!isItem?`<div class="field"><input type="text" id="f-note" placeholder="✍️ メモ（任意）..." value="${esc(detail.form.note||'')}"></div>`:""}
       ${isItem?`<div style="margin-bottom:12px;"><div style="font-size:12px;color:#8ba3c8;margin-bottom:8px;">持ち物の状態</div>
         <div style="display:flex;gap:8px;">
@@ -552,7 +562,7 @@ function detailHTML(trip) {
         </div></div>
         <div class="field"><input type="text" id="f-brand" placeholder="🏷️ ブランド名（任意）..." value="${esc(detail.form.brand||'')}"></div>
         <div class="field"><input type="text" id="f-url" placeholder="🔗 URL（任意）..." value="${esc(detail.form.url||'')}"></div>
-        <div class="field"><label>💴 金額（任意）</label><button type="button" id="open-calc" onclick="openCalc()" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.07);color:#e8f0fe;font-size:14px;text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;"><span id="price-display">${detail.form.price?'¥'+Number(detail.form.price).toLocaleString()+'円':'タップして入力...'}</span><span style="font-size:16px;">🧮</span></button></div>
+        <div class="field"><label>💴 金額（任意）</label><button type="button" id="open-calc" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.07);color:#e8f0fe;font-size:14px;text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;"><span id="price-display">${detail.form.price?'¥'+Number(detail.form.price).toLocaleString()+'円':'タップして入力...'}</span><span style="font-size:16px;">🧮</span></button></div>
         <div class="field"><input type="text" id="f-note" placeholder="✍️ メモ（任意）..." value="${esc(detail.form.note||'')}"></div>`:""}
       <div style="display:flex;gap:10px;margin-top:4px;">
         <button class="btn-primary" id="f-submit" style="flex:1;">${detail.editId?"更新":"追加"}</button>
@@ -706,8 +716,9 @@ function detailHTML(trip) {
 
 function bindDetail(trip) {
   const todos = trip.todos||[], items = trip.items||[];
-  const cats  = (trip.categories||defaultCategories())[detail.tab]||[];
-  const categories = trip.categories||defaultCategories();
+  const itemCats = sharedCategories?.item || (trip.categories||defaultCategories()).item;
+  const cats  = detail.tab==="item" ? itemCats : (trip.categories||defaultCategories()).todo;
+  const categories = {...(trip.categories||defaultCategories()), item: itemCats};
 
   const update = async (patch) => {
     detail.saving=true;
@@ -781,6 +792,7 @@ function bindDetail(trip) {
   document.getElementById("form-cancel")?.addEventListener("click", ()=>{ detail.showForm=false; detail.editId=null; render(); });
   // オーバーレイをタップで閉じる
   document.getElementById("modal-overlay")?.addEventListener("click", (e)=>{ if(e.target.id==="modal-overlay"){detail.showForm=false;detail.editId=null;render();} });
+  document.getElementById("open-calc")?.addEventListener("click", ()=>{ openCalc(); });
   document.getElementById("catmgr-open")?.addEventListener("click", ()=>{ detail.showCatMgr=true; detail.showForm=false; render(); });
   document.getElementById("cat-close")?.addEventListener("click",   ()=>{ detail.showCatMgr=false; render(); });
 
@@ -794,22 +806,40 @@ function bindDetail(trip) {
     // アイテムをre-renderせず選択状態だけ更新
   });
 
-  // 既存アイテム選択
-  let selectedExisting = null;
+  // 既存アイテム複数選択
+  const selectedExistingSet = new Set();
   document.querySelectorAll(".ex-item").forEach(el=>{
     el.addEventListener("click", ()=>{
-      document.querySelectorAll(".ex-item").forEach(x=>{ x.style.background="rgba(255,255,255,0.04)"; x.style.borderColor="rgba(255,255,255,0.08)"; x.querySelector("div").style.background="transparent"; x.querySelector("div").style.borderColor="rgba(255,255,255,0.2)"; });
-      el.style.background="rgba(74,144,217,0.15)"; el.style.borderColor="#4A90D9";
-      el.querySelector("div").style.background="#4A90D9"; el.querySelector("div").style.borderColor="#4A90D9";
-      selectedExisting = el.dataset;
+      const key = el.dataset.text;
+      const chk = el.querySelector(".ex-check");
+      if (selectedExistingSet.has(key)) {
+        selectedExistingSet.delete(key);
+        el.style.background="rgba(255,255,255,0.04)"; el.style.borderColor="rgba(255,255,255,0.08)";
+        chk.style.background="transparent"; chk.style.borderColor="rgba(255,255,255,0.2)"; chk.textContent="";
+      } else {
+        selectedExistingSet.add(key);
+        el.style.background="rgba(74,144,217,0.15)"; el.style.borderColor="#4A90D9";
+        chk.style.background="#4A90D9"; chk.style.borderColor="#4A90D9"; chk.textContent="✓"; chk.style.color="white"; chk.style.fontSize="12px";
+      }
       const addBtn = document.getElementById("ex-add");
-      if (addBtn) { addBtn.disabled=false; addBtn.style.opacity="1"; }
+      if (addBtn) {
+        const n = selectedExistingSet.size;
+        addBtn.disabled = n===0; addBtn.style.opacity = n===0?"0.4":"1";
+        addBtn.textContent = n===0?"追加する（0件）":`追加する（${n}件）`;
+      }
     });
   });
   document.getElementById("ex-add")?.addEventListener("click", async ()=>{
-    if (!selectedExisting) return;
-    const catExists = categories.item.find(c=>c.id===selectedExisting.catid);
-    await update({items:[...items,{id:uid(),text:selectedExisting.text,category:catExists?selectedExisting.catid:(categories.item[0]?.id||""),member:selectedExisting.member,qty:+selectedExisting.qty,ownership:selectedExisting.own,packed:false}]});
+    if (selectedExistingSet.size===0) return;
+    const allPast = [];
+    const seen2=new Set();
+    trips.forEach(t=>{ (t.items||[]).forEach(i=>{ if(!seen2.has(i.text)){seen2.add(i.text);allPast.push(i);} }); });
+    const toAdd = [...selectedExistingSet].map(text=>{
+      const src = allPast.find(i=>i.text===text); if(!src) return null;
+      const catExists = categories.item.find(c=>c.id===src.category);
+      return {id:uid(),text:src.text,category:catExists?src.category:(categories.item[0]?.id||""),member:src.member,qty:src.qty||1,ownership:src.ownership||"owned",brand:src.brand||"",note:src.note||"",url:src.url||"",price:src.price||"",packed:false};
+    }).filter(Boolean);
+    await update({items:[...items,...toAdd]});
     detail.showForm=false;
   });
 
@@ -855,16 +885,27 @@ function bindDetail(trip) {
     detail.form={text:"",category:"",member:"naoki",note:"",qty:1,ownership:"owned",dueDate:"",brand:"",url:"",price:""};
   });
 
-  // カテゴリー追加・削除
+  // カテゴリー追加・削除（itemは共通、todoは旅行ごと）
   document.getElementById("cat-add")?.addEventListener("click", async ()=>{
     const label = document.getElementById("cat-input")?.value.trim();
     if (!label) return;
     const nc={id:`cat_${uid()}`,label,color:COLORS[cats.length%COLORS.length]};
-    await update({categories:{...categories,[detail.tab]:[...cats,nc]}});
+    if (detail.tab==="item") {
+      await saveSharedCategories({...sharedCategories, item:[...cats,nc]});
+    } else {
+      await update({categories:{...categories, todo:[...cats,nc]}});
+    }
     detail.showCatMgr=true;
   });
   document.querySelectorAll(".del-cat").forEach(el=>{
-    el.addEventListener("click", ()=>update({categories:{...categories,[detail.tab]:cats.filter(c=>c.id!==el.dataset.catid)}}));
+    el.addEventListener("click", async ()=>{
+      const filtered = cats.filter(c=>c.id!==el.dataset.catid);
+      if (detail.tab==="item") {
+        await saveSharedCategories({...sharedCategories, item:filtered});
+      } else {
+        await update({categories:{...categories, todo:filtered}});
+      }
+    });
   });
 }
 
@@ -898,45 +939,50 @@ function renderCalc() {
   const overlay = document.createElement("div");
   overlay.id = "calc-overlay";
   overlay.className = "calc-overlay";
+  const previewNum = Number(preview);
   overlay.innerHTML = `
-    <div class="calc-sheet">
+    <div class="calc-sheet" id="calc-sheet">
       <div class="calc-display">
         <div class="calc-expr">${calcExpr||"　"}</div>
-        <div class="calc-val">¥ ${Number(preview)>0?Number(preview).toLocaleString():preview}</div>
+        <div class="calc-val">¥ ${previewNum>0?previewNum.toLocaleString():preview}</div>
       </div>
-      <div class="calc-grid">
-        <button class="calc-btn calc-ac" onclick="calcInput('AC')">AC</button>
-        <button class="calc-btn calc-op" onclick="calcInput('(')">(</button>
-        <button class="calc-btn calc-op" onclick="calcInput(')')">)</button>
-        <button class="calc-btn calc-op" onclick="calcInput('/')">÷</button>
-        <button class="calc-btn calc-num" onclick="calcInput('7')">7</button>
-        <button class="calc-btn calc-num" onclick="calcInput('8')">8</button>
-        <button class="calc-btn calc-num" onclick="calcInput('9')">9</button>
-        <button class="calc-btn calc-op" onclick="calcInput('*')">×</button>
-        <button class="calc-btn calc-num" onclick="calcInput('4')">4</button>
-        <button class="calc-btn calc-num" onclick="calcInput('5')">5</button>
-        <button class="calc-btn calc-num" onclick="calcInput('6')">6</button>
-        <button class="calc-btn calc-op" onclick="calcInput('-')">−</button>
-        <button class="calc-btn calc-num" onclick="calcInput('1')">1</button>
-        <button class="calc-btn calc-num" onclick="calcInput('2')">2</button>
-        <button class="calc-btn calc-num" onclick="calcInput('3')">3</button>
-        <button class="calc-btn calc-op" onclick="calcInput('+')">＋</button>
-        <button class="calc-btn calc-num" onclick="calcInput('0')" style="grid-column:span 2;">0</button>
-        <button class="calc-btn calc-eq" onclick="calcInput('=')">=</button>
-        <button class="calc-btn calc-num" onclick="calcInput('DEL')" style="background:rgba(255,255,255,0.1);color:#8ba3c8;">⌫</button>
-        <button class="calc-btn calc-ok" onclick="calcConfirm()" style="grid-column:span 4;padding:18px;">✓ この金額を使用</button>
+      <div class="calc-grid" id="calc-grid">
+        <button class="calc-btn calc-ac" data-k="AC">AC</button>
+        <button class="calc-btn calc-op" data-k="(">(</button>
+        <button class="calc-btn calc-op" data-k=")">)</button>
+        <button class="calc-btn calc-op" data-k="/">÷</button>
+        <button class="calc-btn calc-num" data-k="7">7</button>
+        <button class="calc-btn calc-num" data-k="8">8</button>
+        <button class="calc-btn calc-num" data-k="9">9</button>
+        <button class="calc-btn calc-op" data-k="*">×</button>
+        <button class="calc-btn calc-num" data-k="4">4</button>
+        <button class="calc-btn calc-num" data-k="5">5</button>
+        <button class="calc-btn calc-num" data-k="6">6</button>
+        <button class="calc-btn calc-op" data-k="-">−</button>
+        <button class="calc-btn calc-num" data-k="1">1</button>
+        <button class="calc-btn calc-num" data-k="2">2</button>
+        <button class="calc-btn calc-num" data-k="3">3</button>
+        <button class="calc-btn calc-op" data-k="+">＋</button>
+        <button class="calc-btn calc-num" data-k="0" style="grid-column:span 2;">0</button>
+        <button class="calc-btn calc-eq" data-k="=">=</button>
+        <button class="calc-btn calc-num" data-k="DEL" style="background:rgba(255,255,255,0.1);color:#8ba3c8;">⌫</button>
+        <button class="calc-btn calc-ok" data-k="OK" style="grid-column:span 4;padding:18px;">✓ この金額を使用</button>
       </div>
     </div>`;
-  overlay.addEventListener("click", e=>{ if(e.target===overlay) overlay.remove(); });
+  // イベント委譲
+  overlay.addEventListener("click", e => {
+    if (e.target === overlay) { overlay.remove(); return; }
+    const btn = e.target.closest("[data-k]");
+    if (!btn) return;
+    const k = btn.dataset.k;
+    if (k === "OK") { calcConfirm(); return; }
+    if (k === "AC") calcExpr = "";
+    else if (k === "DEL") calcExpr = calcExpr.slice(0,-1);
+    else if (k === "=") { const r=evalSafe(calcExpr); calcExpr=r==="エラー"?"":r; }
+    else calcExpr += k;
+    renderCalc();
+  });
   document.body.appendChild(overlay);
-}
-
-function calcInput(key) {
-  if (key==="AC") { calcExpr=""; }
-  else if (key==="DEL") { calcExpr=calcExpr.slice(0,-1); }
-  else if (key==="=") { const r=evalSafe(calcExpr); calcExpr=r==="エラー"?"":r; }
-  else { calcExpr+=key; }
-  renderCalc();
 }
 
 function calcConfirm() {
