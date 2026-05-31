@@ -163,7 +163,7 @@ function startListener() {
   if (unsub) return;
   unsub = onSnapshot(collection(db,"trips"), (snap) => {
     trips = snap.docs.map(d => ({...d.data(), id:d.id}))
-      .sort((a,b) => (a.createdAt?.seconds||0) - (b.createdAt?.seconds||0));
+      .sort((a,b) => (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
     render();
   });
 }
@@ -210,7 +210,7 @@ function bindLogin() {
 // 旅行一覧
 // ═══════════════════════════════════════
 function listHTML() {
-  const cards = trips.map(t => {
+  const cards = trips.map((t, idx) => {
     const todoDone   = (t.todos||[]).filter(x=>x.done).length;
     const itemPacked = (t.items||[]).filter(x=>x.packed).length;
     const tLen = (t.todos||[]).length, iLen = (t.items||[]).length;
@@ -224,7 +224,13 @@ function listHTML() {
             <div style="flex:1;"><div style="font-size:10px;color:#5a7a9a;margin-bottom:4px;">荷物 ${itemPacked}/${iLen}</div><div class="progress-bar" style="width:80px;"><div class="progress-fill" style="width:${iLen?(itemPacked/iLen*100):0}%;background:linear-gradient(90deg,#E07B54,#E8A838);"></div></div></div>
           </div>
         </div>
-        <button class="del-trip icon-btn" data-tripid="${t.id}" style="color:#e07070;font-size:13px;margin-left:12px;">削除</button>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-left:12px;flex-shrink:0;">
+          <div style="display:flex;gap:4px;">
+            <button class="move-up icon-btn" data-tripid="${t.id}" style="font-size:14px;padding:2px 6px;background:rgba(255,255,255,0.06);border-radius:6px;${idx===0?"opacity:0.25;pointer-events:none;":""}">↑</button>
+            <button class="move-down icon-btn" data-tripid="${t.id}" style="font-size:14px;padding:2px 6px;background:rgba(255,255,255,0.06);border-radius:6px;${idx===trips.length-1?"opacity:0.25;pointer-events:none;":""}">↓</button>
+          </div>
+          <button class="del-trip icon-btn" data-tripid="${t.id}" style="color:#e07070;font-size:13px;">削除</button>
+        </div>
       </div>
     </div>`;
   }).join("");
@@ -317,6 +323,25 @@ function bindList() {
       const id = el.dataset.tripid;
       const t  = trips.find(x=>x.id===id);
       if (t && confirm(`「${t.name}」を削除しますか？`)) await removeTrp(id);
+    });
+  });
+
+  // 並び順変更（↑↓）
+  document.querySelectorAll(".move-up,.move-down").forEach(el => {
+    el.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const id  = el.dataset.tripid;
+      const idx = trips.findIndex(t=>t.id===id);
+      const isUp = el.classList.contains("move-up");
+      const swapIdx = isUp ? idx-1 : idx+1;
+      if (swapIdx<0||swapIdx>=trips.length) return;
+      // 入れ替え：createdAtのsecondsを交換してソート順を逆転
+      const a = trips[idx], b = trips[swapIdx];
+      const aTime = a.createdAt?.seconds||0, bTime = b.createdAt?.seconds||0;
+      await Promise.all([
+        saveTrip({...a, createdAt:{seconds:bTime, nanoseconds:0}}),
+        saveTrip({...b, createdAt:{seconds:aTime, nanoseconds:0}}),
+      ]);
     });
   });
 }
@@ -447,6 +472,7 @@ function detailHTML(trip) {
           <button class="qty-btn" id="qty-plus">＋</button>
         </div></div>
         <div class="field"><input type="text" id="f-brand" placeholder="🏷️ ブランド名（任意）..." value="${esc(detail.form.brand||'')}"></div>
+        <div class="field"><input type="text" id="f-url" placeholder="🔗 URL（任意）..." value="${esc(detail.form.url||'')}"></div>
         <div class="field"><input type="text" id="f-note" placeholder="✍️ メモ（任意）..." value="${esc(detail.form.note||'')}"></div>`:""}
       <div style="display:flex;gap:10px;margin-top:4px;">
         <button class="btn-primary" id="f-submit" style="flex:1;">${detail.editId?"更新":"追加"}</button>
@@ -499,6 +525,7 @@ function detailHTML(trip) {
             <div style="font-size:12px;color:#5a7a9a;margin-top:5px;display:flex;gap:8px;flex-wrap:wrap;">
               <span style="color:${cat.color};">${cat.label}</span>
               ${i.brand?`<span style="color:#8ba3c8;">🏷️ ${esc(i.brand)}</span>`:""}
+              ${i.url?`<a href="${esc(i.url)}" target="_blank" rel="noopener noreferrer" style="color:#4A90D9;text-decoration:none;">🔗 リンク</a>`:""}
               ${i.note?`<span style="color:#5a7a9a;">✍️ ${esc(i.note)}</span>`:""}
             </div>
           </div>
@@ -729,8 +756,8 @@ function bindDetail(trip) {
       await update({todos:next});
     } else {
       const next = detail.editId
-        ? items.map(i=>i.id===detail.editId?{...i,text,category:cat,member,note,brand,qty:detail.form.qty,ownership:detail.form.ownership}:i)
-        : [...items,{id:uid(),text,category:cat,member,note,brand,qty:detail.form.qty,ownership:detail.form.ownership,packed:false}];
+        ? items.map(i=>i.id===detail.editId?{...i,text,category:cat,member,note,brand,url,qty:detail.form.qty,ownership:detail.form.ownership}:i)
+        : [...items,{id:uid(),text,category:cat,member,note,brand,url,qty:detail.form.qty,ownership:detail.form.ownership,packed:false}];
       await update({items:next});
     }
     detail.showForm=false; detail.editId=null;
