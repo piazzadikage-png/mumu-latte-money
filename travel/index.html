@@ -225,10 +225,7 @@ function listHTML() {
           </div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-left:12px;flex-shrink:0;">
-          <div style="display:flex;gap:4px;">
-            <button class="move-up icon-btn" data-tripid="${t.id}" style="font-size:14px;padding:2px 6px;background:rgba(255,255,255,0.06);border-radius:6px;${idx===0?"opacity:0.25;pointer-events:none;":""}">↑</button>
-            <button class="move-down icon-btn" data-tripid="${t.id}" style="font-size:14px;padding:2px 6px;background:rgba(255,255,255,0.06);border-radius:6px;${idx===trips.length-1?"opacity:0.25;pointer-events:none;":""}">↓</button>
-          </div>
+          <div class="drag-handle" data-tripid="${t.id}" style="cursor:grab;padding:4px 6px;color:#4a6080;font-size:18px;line-height:1;user-select:none;">⠿</div>
           <button class="del-trip icon-btn" data-tripid="${t.id}" style="color:#e07070;font-size:13px;">削除</button>
         </div>
       </div>
@@ -326,22 +323,90 @@ function bindList() {
     });
   });
 
-  // 並び順変更（↑↓）
-  document.querySelectorAll(".move-up,.move-down").forEach(el => {
-    el.addEventListener("click", async (e) => {
-      e.stopPropagation();
-      const id  = el.dataset.tripid;
-      const idx = trips.findIndex(t=>t.id===id);
-      const isUp = el.classList.contains("move-up");
-      const swapIdx = isUp ? idx-1 : idx+1;
-      if (swapIdx<0||swapIdx>=trips.length) return;
-      // 入れ替え：createdAtのsecondsを交換してソート順を逆転
-      const a = trips[idx], b = trips[swapIdx];
-      const aTime = a.createdAt?.seconds||0, bTime = b.createdAt?.seconds||0;
-      await Promise.all([
-        saveTrip({...a, createdAt:{seconds:bTime, nanoseconds:0}}),
-        saveTrip({...b, createdAt:{seconds:aTime, nanoseconds:0}}),
-      ]);
+  // ドラッグ＆ドロップで並び替え
+  let dragId = null, dragOverId = null;
+  document.querySelectorAll(".drag-handle").forEach(handle => {
+    const card = handle.closest(".card");
+    card.setAttribute("draggable", "true");
+    card.addEventListener("dragstart", e => {
+      dragId = handle.dataset.tripid;
+      e.dataTransfer.effectAllowed = "move";
+      setTimeout(()=>card.style.opacity="0.4", 0);
+    });
+    card.addEventListener("dragend", () => {
+      card.style.opacity="1";
+      document.querySelectorAll(".card[data-tripid]").forEach(c=>c.style.border="");
+    });
+    card.addEventListener("dragover", e => {
+      e.preventDefault();
+      dragOverId = handle.dataset.tripid;
+      document.querySelectorAll(".card[data-tripid]").forEach(c=>c.style.outline="");
+      if (dragOverId !== dragId) card.style.outline="2px solid #4A90D9";
+    });
+    card.addEventListener("drop", async e => {
+      e.preventDefault();
+      card.style.outline="";
+      if (!dragId || dragId === dragOverId) return;
+      // 並び順を入れ替え
+      const fromIdx = trips.findIndex(t=>t.id===dragId);
+      const toIdx   = trips.findIndex(t=>t.id===dragOverId);
+      if (fromIdx<0||toIdx<0) return;
+      const reordered = [...trips];
+      const [moved] = reordered.splice(fromIdx, 1);
+      reordered.splice(toIdx, 0, moved);
+      // createdAt.secondsを連番で再割り当て（降順なので大きい=上）
+      const base = Date.now();
+      await Promise.all(reordered.map((t,i)=>
+        saveTrip({...t, createdAt:{seconds: base - i*1000, nanoseconds:0}})
+      ));
+      dragId = null; dragOverId = null;
+    });
+  });
+
+  // タッチ操作（iOS/Android）
+  let touchDragId = null, touchClone = null, touchStartY = 0;
+  document.querySelectorAll(".drag-handle").forEach(handle => {
+    handle.addEventListener("touchstart", e => {
+      touchDragId = handle.dataset.tripid;
+      touchStartY = e.touches[0].clientY;
+      const card = handle.closest(".card");
+      touchClone = card.cloneNode(true);
+      touchClone.style.cssText = `position:fixed;left:${card.getBoundingClientRect().left}px;top:${card.getBoundingClientRect().top}px;width:${card.offsetWidth}px;opacity:0.8;pointer-events:none;z-index:999;border:2px solid #4A90D9;border-radius:16px;`;
+      document.body.appendChild(touchClone);
+      card.style.opacity="0.3";
+    }, {passive:true});
+    handle.addEventListener("touchmove", e => {
+      if (!touchClone) return;
+      const dy = e.touches[0].clientY - touchStartY;
+      touchClone.style.transform = `translateY(${dy}px)`;
+    }, {passive:true});
+    handle.addEventListener("touchend", async e => {
+      if (!touchClone || !touchDragId) return;
+      touchClone.remove(); touchClone = null;
+      const card = handle.closest(".card");
+      card.style.opacity="1";
+      // 指を離した位置にあるカードを探す
+      const endY = e.changedTouches[0].clientY;
+      const allCards = [...document.querySelectorAll(".card[data-tripid]")];
+      let targetId = null;
+      for (const c of allCards) {
+        const r = c.getBoundingClientRect();
+        if (endY >= r.top && endY <= r.bottom && c.dataset.tripid !== touchDragId) {
+          targetId = c.dataset.tripid; break;
+        }
+      }
+      if (!targetId) { touchDragId=null; return; }
+      const fromIdx = trips.findIndex(t=>t.id===touchDragId);
+      const toIdx   = trips.findIndex(t=>t.id===targetId);
+      if (fromIdx<0||toIdx<0) { touchDragId=null; return; }
+      const reordered = [...trips];
+      const [moved] = reordered.splice(fromIdx, 1);
+      reordered.splice(toIdx, 0, moved);
+      const base = Date.now();
+      await Promise.all(reordered.map((t,i)=>
+        saveTrip({...t, createdAt:{seconds: base - i*1000, nanoseconds:0}})
+      ));
+      touchDragId = null;
     });
   });
 }
