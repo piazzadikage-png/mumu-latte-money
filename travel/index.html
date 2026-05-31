@@ -308,7 +308,7 @@ function bindList() {
       detail = { tab:"todo", showForm:false, showCatMgr:false, showTripEdit:false, editId:null,
         filterMember:"all_members", filterCat:"all", filterOwnership:"all",
         newName:t.name, newDateFrom:t.dateFrom||"", newDateTo:t.dateTo||"",
-        form:{text:"",category:"",member:"naoki",note:"",qty:1,ownership:"owned",dueDate:"",brand:"",url:""},
+        form:{text:"",category:"",member:"naoki",note:"",qty:1,ownership:"owned",dueDate:"",brand:"",url:"",price:""},
         catLabel:"", itemMode:"new", existingSearch:"", saving:false };
       render();
     });
@@ -525,6 +525,7 @@ function detailHTML(trip) {
       </div>
       ${!isItem?`<div class="field"><label>実施日（任意）</label><input type="date" id="f-due" value="${detail.form.dueDate||''}" style="color-scheme:dark;"></div>`:""}
       ${!isItem?`<div class="field"><input type="text" id="f-url" placeholder="🔗 URL（任意）..." value="${esc(detail.form.url||'')}"></div>`:""}
+      ${!isItem?`<div class="field"><label>💴 金額（任意）</label><div style="display:flex;align-items:center;gap:6px;"><input type="number" id="f-price" placeholder="0" min="0" value="${detail.form.price||''}" style="flex:1;"><span style="color:#8ba3c8;font-size:13px;">円</span></div></div>`:""}
       ${!isItem?`<div class="field"><input type="text" id="f-note" placeholder="✍️ メモ（任意）..." value="${esc(detail.form.note||'')}"></div>`:""}
       ${isItem?`<div style="margin-bottom:12px;"><div style="font-size:12px;color:#8ba3c8;margin-bottom:8px;">持ち物の状態</div>
         <div style="display:flex;gap:8px;">
@@ -538,6 +539,7 @@ function detailHTML(trip) {
         </div></div>
         <div class="field"><input type="text" id="f-brand" placeholder="🏷️ ブランド名（任意）..." value="${esc(detail.form.brand||'')}"></div>
         <div class="field"><input type="text" id="f-url" placeholder="🔗 URL（任意）..." value="${esc(detail.form.url||'')}"></div>
+        <div class="field"><label>💴 金額（任意）</label><div style="display:flex;align-items:center;gap:6px;"><input type="number" id="f-price" placeholder="0" min="0" value="${detail.form.price||''}" style="flex:1;"><span style="color:#8ba3c8;font-size:13px;">円</span></div></div>
         <div class="field"><input type="text" id="f-note" placeholder="✍️ メモ（任意）..." value="${esc(detail.form.note||'')}"></div>`:""}
       <div style="display:flex;gap:10px;margin-top:4px;">
         <button class="btn-primary" id="f-submit" style="flex:1;">${detail.editId?"更新":"追加"}</button>
@@ -559,6 +561,7 @@ function detailHTML(trip) {
             <div style="font-size:12px;color:#5a7a9a;margin-top:3px;display:flex;gap:8px;flex-wrap:wrap;">
               <span style="color:${cat.color};">${cat.label}</span>
               ${t.dueDate?`<span>📅 ${fmt(t.dueDate)}</span>`:""}
+              ${t.price?`<span style="color:#5BAD8F;">💴 ¥${Number(t.price).toLocaleString()}</span>`:""}
               ${t.url?`<a href="${esc(t.url)}" target="_blank" rel="noopener noreferrer" style="color:#4A90D9;text-decoration:none;">🔗 リンク</a>`:""}
               ${t.note?`<span>✍️ ${esc(t.note)}</span>`:""}
             </div>
@@ -590,6 +593,7 @@ function detailHTML(trip) {
             <div style="font-size:12px;color:#5a7a9a;margin-top:5px;display:flex;gap:8px;flex-wrap:wrap;">
               <span style="color:${cat.color};">${cat.label}</span>
               ${i.brand?`<span style="color:#8ba3c8;">🏷️ ${esc(i.brand)}</span>`:""}
+              ${i.price?`<span style="color:#5BAD8F;">💴 ¥${Number(i.price).toLocaleString()}</span>`:""}
               ${i.url?`<a href="${esc(i.url)}" target="_blank" rel="noopener noreferrer" style="color:#4A90D9;text-decoration:none;">🔗 リンク</a>`:""}
               ${i.note?`<span style="color:#5a7a9a;">✍️ ${esc(i.note)}</span>`:""}
             </div>
@@ -734,7 +738,7 @@ function bindDetail(trip) {
       const type=el.dataset.type, id=el.dataset.id;
       const src = type==="todo" ? todos.find(t=>t.id===id) : items.find(i=>i.id===id);
       if (!src) return;
-      detail.form={text:src.text,category:src.category,member:src.member,note:src.note||"",qty:src.qty||1,ownership:src.ownership||"owned",dueDate:src.dueDate||"",brand:src.brand||"",url:src.url||""};
+      detail.form={text:src.text,category:src.category,member:src.member,note:src.note||"",qty:src.qty||1,ownership:src.ownership||"owned",dueDate:src.dueDate||"",brand:src.brand||"",url:src.url||"",price:src.price||""};
       detail.editId=id; detail.showForm=true; detail.showCatMgr=false; detail.showTripEdit=false;
       render();
     });
@@ -749,7 +753,7 @@ function bindDetail(trip) {
 
   // フォームを開く
   document.getElementById("form-open")?.addEventListener("click", ()=>{
-    detail.form={text:"",category:cats[0]?.id||"",member:"naoki",note:"",qty:1,ownership:"owned",dueDate:"",brand:"",url:""};
+    detail.form={text:"",category:cats[0]?.id||"",member:"naoki",note:"",qty:1,ownership:"owned",dueDate:"",brand:"",url:"",price:""};
     detail.editId=null; detail.showForm=true; detail.showCatMgr=false; detail.showTripEdit=false; detail.itemMode="new"; detail.existingSearch="";
     render();
   });
@@ -814,19 +818,20 @@ function bindDetail(trip) {
     const dueDate = document.getElementById("f-due")?.value   || "";
     const url    = document.getElementById("f-url")?.value    || "";
     const brand  = document.getElementById("f-brand")?.value  || "";
+    const price  = document.getElementById("f-price")?.value  || "";
     if (detail.tab==="todo") {
       const next = detail.editId
-        ? todos.map(t=>t.id===detail.editId?{...t,text,category:cat,member,note,dueDate,url}:t)
-        : [...todos,{id:uid(),text,category:cat,member,note,dueDate,url,done:false}];
+        ? todos.map(t=>t.id===detail.editId?{...t,text,category:cat,member,note,dueDate,url,price}:t)
+        : [...todos,{id:uid(),text,category:cat,member,note,dueDate,url,price,done:false}];
       await update({todos:next});
     } else {
       const next = detail.editId
-        ? items.map(i=>i.id===detail.editId?{...i,text,category:cat,member,note,brand,url,qty:detail.form.qty,ownership:detail.form.ownership}:i)
-        : [...items,{id:uid(),text,category:cat,member,note,brand,url,qty:detail.form.qty,ownership:detail.form.ownership,packed:false}];
+        ? items.map(i=>i.id===detail.editId?{...i,text,category:cat,member,note,brand,url,price,qty:detail.form.qty,ownership:detail.form.ownership}:i)
+        : [...items,{id:uid(),text,category:cat,member,note,brand,url,price,qty:detail.form.qty,ownership:detail.form.ownership,packed:false}];
       await update({items:next});
     }
     detail.showForm=false; detail.editId=null;
-    detail.form={text:"",category:"",member:"naoki",note:"",qty:1,ownership:"owned",dueDate:"",brand:"",url:""};
+    detail.form={text:"",category:"",member:"naoki",note:"",qty:1,ownership:"owned",dueDate:"",brand:"",url:"",price:""};
   });
 
   // カテゴリー追加・削除
