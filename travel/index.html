@@ -680,6 +680,13 @@ function detailHTML(trip) {
       </div>
     </div>
     <div class="content">
+      ${detail.tab==="todo" ? (()=>{
+        const todoTotal = todos.reduce((s,t)=>s+(Number(t.price)||0),0);
+        return todoTotal>0?`<div style="background:rgba(91,173,143,0.12);border:1px solid rgba(91,173,143,0.3);border-radius:12px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:13px;color:#8ba3c8;">💴 合計金額</span>
+          <span style="font-size:18px;font-weight:700;color:#5BAD8F;">¥${todoTotal.toLocaleString()}</span>
+        </div>`:"";
+      })() : ""}
       <div style="display:flex;gap:8px;margin-bottom:14px;">
         <div class="field" style="flex:1;"><label>対象者</label><select id="fil-member"><option value="all_members"${detail.filterMember==="all_members"?" selected":""}>全員</option>${MEMBERS.map(m=>`<option value="${m.id}"${m.id===detail.filterMember?" selected":""}>${m.label}</option>`).join("")}</select></div>
         ${detail.tab==="item"?`<div class="field" style="flex:1;"><label>購入状況</label><select id="fil-ownership"><option value="all"${detail.filterOwnership==="all"?" selected":""}>すべて</option><option value="owned"${detail.filterOwnership==="owned"?" selected":""}>持っている</option><option value="buy"${detail.filterOwnership==="buy"?" selected":""}>購入が必要</option></select></div>`:""}
@@ -692,13 +699,6 @@ function detailHTML(trip) {
           <button class="btn-ghost" id="catmgr-open" style="white-space:nowrap;">カテゴリー管理</button>
         </div>`:""}
       ${detail.tab==="todo" ? todoListHTML : itemListHTML}
-      ${detail.tab==="todo" ? (()=>{
-        const todoTotal = todos.reduce((s,t)=>s+(Number(t.price)||0),0);
-        return todoTotal>0?`<div style="background:rgba(91,173,143,0.12);border:1px solid rgba(91,173,143,0.3);border-radius:12px;padding:12px 16px;margin-top:14px;display:flex;align-items:center;justify-content:space-between;">
-          <span style="font-size:13px;color:#8ba3c8;">💴 合計金額</span>
-          <span style="font-size:18px;font-weight:700;color:#5BAD8F;">¥${todoTotal.toLocaleString()}</span>
-        </div>`:"";
-      })() : ""}
     </div>
   </div>
   ${formHTML}`;
