@@ -590,53 +590,48 @@ function detailHTML(trip) {
 
   const todoListHTML = sortedTodos.length===0
     ? '<div style="text-align:center;padding:40px 0;color:#4a6080;font-size:14px;">タスクがありません</div>'
-    : Object.entries(todoGroups).map(([dateKey, group])=>{
-        const dateLabel = dateKey==="__nodate__" ? "日程未定" : fmt(dateKey);
-        const items_html = group.map(t=>{
-          const cat=getCat(t.category), mem=getMem(t.member);
-          return `<div style="display:flex;align-items:flex-start;gap:0;margin-bottom:8px;">
-            <!-- タイムライン縦棒 -->
-            <div style="display:flex;flex-direction:column;align-items:center;width:28px;flex-shrink:0;padding-top:4px;">
-              <div style="width:10px;height:10px;border-radius:50%;background:${t.done?"#2a3a4a":cat.color};flex-shrink:0;"></div>
-              <div style="width:2px;flex:1;min-height:28px;background:linear-gradient(${cat.color}44,transparent);margin-top:3px;"></div>
-            </div>
-            <!-- カード -->
-            <div class="item-row ${t.done?"done":""}" style="flex:1;margin-left:4px;margin-bottom:0;border-left:3px solid ${t.done?"#2a3a4a":cat.color};">
-              <button class="check-circle ${t.done?"checked":""}" data-id="${t.id}" style="${t.done?`border-color:${cat.color};background:${cat.color};`:""}">
-                ${t.done?'<span style="color:white;font-size:11px;">✓</span>':""}
-              </button>
-              <div style="flex:1;min-width:0;">
-                <div style="font-size:15px;font-weight:500;${t.done?"text-decoration:line-through;":""}white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(t.text)}</div>
-                <div style="font-size:12px;color:#5a7a9a;margin-top:3px;display:flex;gap:8px;flex-wrap:wrap;">
-                  <span style="color:${cat.color};">${cat.label}</span>
-                  ${t.bookDate?`<span>🔖 ${fmt(t.bookDate)}</span>`:""}
-                  ${t.price?`<span style="color:#5BAD8F;">💴 ¥${Number(t.price).toLocaleString()}</span>`:""}
-                  ${t.url?`<a href="${esc(t.url)}" target="_blank" rel="noopener noreferrer" style="color:#4A90D9;text-decoration:none;">🔗 リンク</a>`:""}
-                  ${t.note?`<span>✍️ ${esc(t.note)}</span>`:""}
+    : `<div style="position:relative;padding-left:20px;">
+        <!-- 1本の縦線 -->
+        <div style="position:absolute;left:6px;top:6px;bottom:6px;width:2px;background:rgba(255,255,255,0.12);border-radius:2px;"></div>
+        ${Object.entries(todoGroups).map(([dateKey, group])=>{
+          const dateLabel = dateKey==="__nodate__" ? "日程未定" : fmt(dateKey);
+          const items_html = group.map(t=>{
+            const cat=getCat(t.category), mem=getMem(t.member);
+            return `<div style="position:relative;margin-bottom:8px;">
+              <!-- ドット -->
+              <div style="position:absolute;left:-17px;top:12px;width:10px;height:10px;border-radius:50%;background:${t.done?"#2a3a4a":cat.color};border:2px solid ${t.done?"#2a3a4a":cat.color};"></div>
+              <div class="item-row ${t.done?"done":""}" style="border-left:3px solid ${t.done?"#2a3a4a":cat.color};">
+                <button class="check-circle ${t.done?"checked":""}" data-id="${t.id}" style="${t.done?`border-color:${cat.color};background:${cat.color};`:""}">
+                  ${t.done?'<span style="color:white;font-size:11px;">✓</span>':""}
+                </button>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:15px;font-weight:500;${t.done?"text-decoration:line-through;":""}white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(t.text)}</div>
+                  <div style="font-size:12px;color:#5a7a9a;margin-top:3px;display:flex;gap:8px;flex-wrap:wrap;">
+                    <span style="color:${cat.color};">${cat.label}</span>
+                    ${t.bookDate?`<span>🔖 ${fmt(t.bookDate)}</span>`:""}
+                    ${t.price?`<span style="color:#5BAD8F;">💴 ¥${Number(t.price).toLocaleString()}</span>`:""}
+                    ${t.url?`<a href="${esc(t.url)}" target="_blank" rel="noopener noreferrer" style="color:#4A90D9;text-decoration:none;">🔗 リンク</a>`:""}
+                    ${t.note?`<span>✍️ ${esc(t.note)}</span>`:""}
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+                  <div class="member-badge" style="background:${mem.color};">${mem.label.slice(0,2)}</div>
+                  <button class="edit-item icon-btn" data-type="todo" data-id="${t.id}">✏️</button>
+                  <button class="del-item  icon-btn" data-type="todo" data-id="${t.id}">✕</button>
                 </div>
               </div>
-              <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
-                <div class="member-badge" style="background:${mem.color};">${mem.label.slice(0,2)}</div>
-                <button class="edit-item icon-btn" data-type="todo" data-id="${t.id}">✏️</button>
-                <button class="del-item  icon-btn" data-type="todo" data-id="${t.id}">✕</button>
-              </div>
+            </div>`;
+          }).join("");
+          return `<div style="margin-bottom:16px;">
+            <!-- 日付ラベル -->
+            <div style="position:relative;margin-bottom:6px;">
+              <div style="position:absolute;left:-17px;top:50%;transform:translateY(-50%);width:10px;height:10px;border-radius:50%;background:#1a2f4a;border:2px solid rgba(255,255,255,0.25);"></div>
+              <span style="font-size:12px;font-weight:700;color:${dateKey==="__nodate__"?"#4a6080":"#8ba3c8"};letter-spacing:0.5px;">${dateLabel}</span>
             </div>
+            ${items_html}
           </div>`;
-        }).join("");
-
-        return `<div style="margin-bottom:16px;">
-          <!-- 日付ヘッダー -->
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-            <div style="width:28px;display:flex;justify-content:center;">
-              <div style="width:3px;height:20px;background:rgba(255,255,255,0.15);border-radius:2px;"></div>
-            </div>
-            <div style="font-size:12px;font-weight:700;color:${dateKey==="__nodate__"?"#4a6080":"#8ba3c8"};letter-spacing:0.5px;">
-              ${dateLabel}
-            </div>
-          </div>
-          ${items_html}
-        </div>`;
-      }).join("");
+        }).join("")}
+      </div>`;
 
   const itemListHTML = fitems.length===0
     ? '<div style="text-align:center;padding:40px 0;color:#4a6080;font-size:14px;">アイテムがありません</div>'
