@@ -477,12 +477,14 @@ function detailHTML(trip) {
     <div class="modal-overlay" id="catmgr-overlay">
       <div class="modal-sheet">
         <div class="modal-handle"></div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
           <span style="font-weight:700;font-size:17px;">カテゴリー管理</span>
           <button class="icon-btn" id="cat-close" style="font-size:20px;">✕</button>
         </div>
+        <div style="font-size:12px;color:#5a7a9a;margin-bottom:12px;">⠿ を長押しでドラッグして並び替え</div>
         <div id="cat-list">
-          ${cats.map(c=>`<div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.05);border-radius:10px;padding:10px 12px;margin-bottom:8px;border:1px solid rgba(255,255,255,0.08);">
+          ${cats.map((c,i)=>`<div class="cat-row" data-catid="${c.id}" draggable="true" style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.05);border-radius:10px;padding:10px 12px;margin-bottom:8px;border:1px solid rgba(255,255,255,0.08);">
+            <span class="cat-drag-handle" style="cursor:grab;font-size:16px;color:#4a6080;user-select:none;touch-action:none;">⠿</span>
             <div style="width:10px;height:10px;border-radius:50%;background:${c.color};flex-shrink:0;"></div>
             <span style="flex:1;font-size:14px;">${esc(c.label)}</span>
             <button class="del-cat icon-btn" data-catid="${c.id}" style="color:#e07070;font-size:13px;">削除</button>
@@ -580,11 +582,14 @@ function detailHTML(trip) {
 
   // リスト
   // タイムライン表示（実施日順）
+  // 日付順 → 同日内はカテゴリー順（cats配列の並び順）
+  const todoCatOrder = cats.reduce((acc,c,i)=>({...acc,[c.id]:i}),{});
   const sortedTodos = [...ftodos].sort((a,b)=>{
-    if (!a.dueDate && !b.dueDate) return 0;
-    if (!a.dueDate) return 1;
-    if (!b.dueDate) return -1;
-    return a.dueDate.localeCompare(b.dueDate);
+    // 1st: 日付順（未設定は最後）
+    const aDate = a.dueDate||"9999-99-99", bDate = b.dueDate||"9999-99-99";
+    if (aDate !== bDate) return aDate.localeCompare(bDate);
+    // 2nd: カテゴリー順
+    return (todoCatOrder[a.category]??99)-(todoCatOrder[b.category]??99);
   });
   const todoGroups = {};
   sortedTodos.forEach(t=>{
@@ -935,6 +940,74 @@ function bindDetail(trip) {
     }
     detail.showForm=false; detail.editId=null;
     detail.form={text:"",category:"",member:"naoki",note:"",qty:1,ownership:"owned",dueDate:"",bookDate:"",brand:"",url:"",price:""};
+  });
+
+  // カテゴリー並び替え（ドラッグ＆ドロップ）
+  let catDragId = null;
+  document.querySelectorAll(".cat-row").forEach(row=>{
+    row.addEventListener("dragstart", e=>{
+      catDragId = row.dataset.catid;
+      setTimeout(()=>row.style.opacity="0.4", 0);
+    });
+    row.addEventListener("dragend", ()=>{
+      row.style.opacity="1";
+      document.querySelectorAll(".cat-row").forEach(r=>r.style.outline="");
+    });
+    row.addEventListener("dragover", e=>{
+      e.preventDefault();
+      if (row.dataset.catid !== catDragId) row.style.outline="2px solid #4A90D9";
+    });
+    row.addEventListener("dragleave", ()=>row.style.outline="");
+    row.addEventListener("drop", async e=>{
+      e.preventDefault();
+      row.style.outline="";
+      if (!catDragId || catDragId===row.dataset.catid) return;
+      const fromIdx = cats.findIndex(c=>c.id===catDragId);
+      const toIdx   = cats.findIndex(c=>c.id===row.dataset.catid);
+      if (fromIdx<0||toIdx<0) return;
+      const reordered = [...cats];
+      const [moved] = reordered.splice(fromIdx,1);
+      reordered.splice(toIdx,0,moved);
+      if (detail.tab==="item") {
+        sharedCategories = {...(sharedCategories||{}), item:reordered};
+        detail.showCatMgr=true; render();
+        saveSharedCategories(sharedCategories);
+      } else {
+        await update({categories:{...categories, todo:reordered}});
+        detail.showCatMgr=true; render();
+      }
+      catDragId=null;
+    });
+
+    // タッチ対応
+    let touchCatDragId=null, touchClone2=null, touchStartY2=0;
+    row.querySelector(".cat-drag-handle")?.addEventListener("touchstart", e=>{
+      touchCatDragId=row.dataset.catid; touchStartY2=e.touches[0].clientY;
+      touchClone2=row.cloneNode(true);
+      const r=row.getBoundingClientRect();
+      touchClone2.style.cssText=`position:fixed;left:${r.left}px;top:${r.top}px;width:${r.width}px;opacity:0.8;pointer-events:none;z-index:999;border:2px solid #4A90D9;border-radius:10px;`;
+      document.body.appendChild(touchClone2);
+      row.style.opacity="0.3";
+    },{passive:true});
+    row.querySelector(".cat-drag-handle")?.addEventListener("touchmove", e=>{
+      if(!touchClone2)return;
+      touchClone2.style.transform=`translateY(${e.touches[0].clientY-touchStartY2}px)`;
+    },{passive:true});
+    row.querySelector(".cat-drag-handle")?.addEventListener("touchend", async e=>{
+      if(!touchClone2||!touchCatDragId)return;
+      touchClone2.remove(); touchClone2=null; row.style.opacity="1";
+      const endY=e.changedTouches[0].clientY;
+      const allRows=[...document.querySelectorAll(".cat-row")];
+      let targetId=null;
+      for(const r of allRows){ const rb=r.getBoundingClientRect(); if(endY>=rb.top&&endY<=rb.bottom&&r.dataset.catid!==touchCatDragId){targetId=r.dataset.catid;break;} }
+      if(!targetId){touchCatDragId=null;return;}
+      const fromIdx=cats.findIndex(c=>c.id===touchCatDragId), toIdx=cats.findIndex(c=>c.id===targetId);
+      if(fromIdx<0||toIdx<0){touchCatDragId=null;return;}
+      const reordered=[...cats]; const [moved]=reordered.splice(fromIdx,1); reordered.splice(toIdx,0,moved);
+      if(detail.tab==="item"){sharedCategories={...(sharedCategories||{}),item:reordered};detail.showCatMgr=true;render();saveSharedCategories(sharedCategories);}
+      else{await update({categories:{...categories,todo:reordered}});detail.showCatMgr=true;render();}
+      touchCatDragId=null;
+    });
   });
 
   // カテゴリー追加・削除（itemは共通、todoは旅行ごと）
