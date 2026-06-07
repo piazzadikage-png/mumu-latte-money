@@ -487,7 +487,8 @@ function detailHTML(trip) {
             <span class="cat-drag-handle" style="cursor:grab;font-size:16px;color:#4a6080;user-select:none;touch-action:none;">⠿</span>
             <div style="width:10px;height:10px;border-radius:50%;background:${c.color};flex-shrink:0;"></div>
             <span style="flex:1;font-size:14px;">${esc(c.label)}</span>
-            <button class="del-cat icon-btn" data-catid="${c.id}" style="color:#e07070;font-size:13px;">削除</button>
+            <button class="edit-cat icon-btn" data-catid="${c.id}" style="color:#8ba3c8;font-size:13px;">✏️</button>
+            <button class="del-cat icon-btn" data-catid="${c.id}" style="color:#e07070;font-size:13px;">✕</button>
           </div>`).join("")}
         </div>
         <div style="display:flex;gap:8px;margin-top:12px;">
@@ -1042,6 +1043,67 @@ function bindDetail(trip) {
         detail.showCatMgr = true;
         render();
       }
+    });
+  });
+
+  // カテゴリー編集（インライン）
+  document.querySelectorAll(".edit-cat").forEach(el=>{
+    el.addEventListener("click", ()=>{
+      const catId = el.dataset.catid;
+      const cat = cats.find(c=>c.id===catId);
+      if (!cat) return;
+      const row = el.closest(".cat-row");
+
+      // 既にedit中なら閉じる
+      if (row.querySelector(".cat-edit-form")) { row.querySelector(".cat-edit-form").remove(); return; }
+
+      const form = document.createElement("div");
+      form.className = "cat-edit-form";
+      form.style.cssText = "margin-top:10px;display:flex;flex-direction:column;gap:8px;";
+      form.innerHTML = `
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="text" id="cat-edit-name-${catId}" value="${esc(cat.label)}" style="flex:1;font-size:16px;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.1);color:#e8f0fe;">
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          ${["#4A90D9","#7B68EE","#E07B54","#E8A838","#5BAD8F","#D95B8A","#4ABFB0","#9B7FD4","#C0784A","#6B9E3A","#E8E838","#888"].map(col=>
+            `<div class="color-pick" data-color="${col}" style="width:24px;height:24px;border-radius:50%;background:${col};cursor:pointer;border:3px solid ${col===cat.color?'white':'transparent'};flex-shrink:0;"></div>`
+          ).join("")}
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button id="cat-edit-save-${catId}" class="btn-primary" style="flex:1;padding:9px;font-size:13px;">保存</button>
+          <button id="cat-edit-cancel-${catId}" class="btn-ghost" style="padding:9px 14px;font-size:13px;">キャンセル</button>
+        </div>`;
+      row.appendChild(form);
+
+      // カラー選択
+      let selectedColor = cat.color;
+      form.querySelectorAll(".color-pick").forEach(cp=>{
+        cp.addEventListener("click", ()=>{
+          selectedColor = cp.dataset.color;
+          form.querySelectorAll(".color-pick").forEach(x=>x.style.border=`3px solid transparent`);
+          cp.style.border=`3px solid white`;
+        });
+      });
+
+      // 保存
+      document.getElementById(`cat-edit-save-${catId}`)?.addEventListener("click", async ()=>{
+        const newLabel = document.getElementById(`cat-edit-name-${catId}`)?.value.trim();
+        if (!newLabel) return;
+        const updated = cats.map(c=>c.id===catId?{...c,label:newLabel,color:selectedColor}:c);
+        if (detail.tab==="item") {
+          sharedCategories = {...(sharedCategories||{}), item:updated};
+          detail.showCatMgr=true; render();
+          saveSharedCategories(sharedCategories);
+        } else {
+          await update({categories:{...categories, todo:updated}});
+          detail.showCatMgr=true; render();
+        }
+      });
+
+      // キャンセル
+      document.getElementById(`cat-edit-cancel-${catId}`)?.addEventListener("click", ()=>{
+        form.remove();
+      });
     });
   });
 }
