@@ -55,12 +55,12 @@
     .modal-sheet { background: #162438; border-radius: 20px; width: 100%; max-width: 480px; max-height: 88vh; overflow-y: auto; padding: 24px 20px 28px; box-shadow: 0 24px 60px rgba(0,0,0,0.5); }
     .modal-handle { display: none; }
     .calc-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 300; display: flex; align-items: flex-end; justify-content: center; }
-    .calc-sheet { background: #162438; border-radius: 24px 24px 0 0; width: 100%; max-width: 480px; padding: 16px 16px 32px; box-shadow: 0 -8px 40px rgba(0,0,0,0.5); }
+    .calc-sheet { background: #162438; border-radius: 24px 24px 0 0; width: 100%; max-width: 480px; padding: 16px 16px 32px; box-shadow: 0 -8px 40px rgba(0,0,0,0.5); touch-action: manipulation; }
     .calc-display { background: rgba(0,0,0,0.3); border-radius: 14px; padding: 14px 18px; margin-bottom: 14px; text-align: right; }
     .calc-expr { font-size: 13px; color: #5a7a9a; min-height: 18px; word-break: break-all; }
     .calc-val { font-size: 32px; font-weight: 700; color: #e8f0fe; line-height: 1.2; word-break: break-all; }
     .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-    .calc-btn { padding: 16px 8px; border-radius: 12px; border: none; font-size: 17px; font-weight: 600; cursor: pointer; transition: opacity 0.15s; }
+    .calc-btn { padding: 16px 8px; border-radius: 12px; border: none; font-size: 17px; font-weight: 600; cursor: pointer; transition: opacity 0.15s; touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none; }
     .calc-btn:active { opacity: 0.7; }
     .calc-num { background: rgba(255,255,255,0.1); color: #e8f0fe; }
     .calc-op  { background: rgba(74,144,217,0.25); color: #74b4f7; }
@@ -474,19 +474,24 @@ function detailHTML(trip) {
 
   // カテゴリー管理
   const catMgrHTML = detail.showCatMgr ? `
-    <div class="form-box">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-        <span style="font-weight:700;font-size:15px;">カテゴリー管理</span>
-        <button class="icon-btn" id="cat-close" style="font-size:18px;">✕</button>
-      </div>
-      ${cats.map(c=>`<div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.05);border-radius:10px;padding:9px 12px;margin-bottom:8px;border:1px solid rgba(255,255,255,0.08);">
-        <div style="width:10px;height:10px;border-radius:50%;background:${c.color};flex-shrink:0;"></div>
-        <span style="flex:1;font-size:14px;">${esc(c.label)}</span>
-        <button class="del-cat icon-btn" data-catid="${c.id}" style="color:#e07070;font-size:12px;">削除</button>
-      </div>`).join("")}
-      <div style="display:flex;gap:8px;margin-top:8px;">
-        <input type="text" id="cat-input" placeholder="新しいカテゴリー名..." style="flex:1;">
-        <button class="btn-primary" id="cat-add" style="width:auto;padding:10px 16px;white-space:nowrap;">追加</button>
+    <div class="modal-overlay" id="catmgr-overlay">
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <span style="font-weight:700;font-size:17px;">カテゴリー管理</span>
+          <button class="icon-btn" id="cat-close" style="font-size:20px;">✕</button>
+        </div>
+        <div id="cat-list">
+          ${cats.map(c=>`<div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.05);border-radius:10px;padding:10px 12px;margin-bottom:8px;border:1px solid rgba(255,255,255,0.08);">
+            <div style="width:10px;height:10px;border-radius:50%;background:${c.color};flex-shrink:0;"></div>
+            <span style="flex:1;font-size:14px;">${esc(c.label)}</span>
+            <button class="del-cat icon-btn" data-catid="${c.id}" style="color:#e07070;font-size:13px;">削除</button>
+          </div>`).join("")}
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px;">
+          <input type="text" id="cat-input" placeholder="新しいカテゴリー名..." style="flex:1;font-size:16px;">
+          <button class="btn-primary" id="cat-add" style="width:auto;padding:10px 16px;white-space:nowrap;">追加</button>
+        </div>
       </div>
     </div>` : "";
 
@@ -746,7 +751,6 @@ function detailHTML(trip) {
         <div class="field" style="flex:1;"><label>対象者</label><select id="fil-member"><option value="all_members"${detail.filterMember==="all_members"?" selected":""}>全員</option>${MEMBERS.map(m=>`<option value="${m.id}"${m.id===detail.filterMember?" selected":""}>${m.label}</option>`).join("")}</select></div>
         ${detail.tab==="item"?`<div class="field" style="flex:1;"><label>購入状況</label><select id="fil-ownership"><option value="all"${detail.filterOwnership==="all"?" selected":""}>すべて</option><option value="owned"${detail.filterOwnership==="owned"?" selected":""}>持っている</option><option value="buy"${detail.filterOwnership==="buy"?" selected":""}>購入が必要</option></select></div>`:""}
       </div>
-      ${catMgrHTML}
       ${makeDashboard()}
       ${!detail.showCatMgr?`
         <div style="display:flex;gap:8px;margin-bottom:14px;">
@@ -756,7 +760,8 @@ function detailHTML(trip) {
       ${detail.tab==="todo" ? todoListHTML : itemListHTML}
     </div>
   </div>
-  ${formHTML}`;
+  ${formHTML}
+  ${catMgrHTML}`;
 }
 
 function bindDetail(trip) {
@@ -840,6 +845,7 @@ function bindDetail(trip) {
   document.getElementById("open-calc")?.addEventListener("click", ()=>{ openCalc(); });
   document.getElementById("catmgr-open")?.addEventListener("click", ()=>{ detail.showCatMgr=true; detail.showForm=false; render(); });
   document.getElementById("cat-close")?.addEventListener("click",   ()=>{ detail.showCatMgr=false; render(); });
+  document.getElementById("catmgr-overlay")?.addEventListener("click", (e)=>{ if(e.target.id==="catmgr-overlay"){detail.showCatMgr=false;render();} });
 
   // モード切替（持ち物）
   document.getElementById("mode-new")?.addEventListener("click",      ()=>{ detail.itemMode="new"; render(); });
@@ -933,25 +939,35 @@ function bindDetail(trip) {
 
   // カテゴリー追加・削除（itemは共通、todoは旅行ごと）
   document.getElementById("cat-add")?.addEventListener("click", async ()=>{
-    const label = document.getElementById("cat-input")?.value.trim();
+    const input = document.getElementById("cat-input");
+    const label = input?.value.trim();
     if (!label) return;
-    const nc={id:`cat_${uid()}`,label,color:COLORS[cats.length%COLORS.length]};
+    const nc = {id:`cat_${uid()}`,label,color:COLORS[cats.length%COLORS.length]};
     if (detail.tab==="item") {
-      const base = sharedCategories || {};
-      await saveSharedCategories({...base, item:[...cats, nc]});
+      const newCats = [...cats, nc];
+      sharedCategories = {...(sharedCategories||{}), item: newCats}; // ローカル即時反映
+      detail.showCatMgr = true;
+      render(); // すぐUI更新
+      saveSharedCategories(sharedCategories); // バックグラウンドで保存
     } else {
-      await update({categories:{...categories, todo:[...cats,nc]}});
+      const updated = {...categories, todo:[...cats,nc]};
+      await update({categories: updated});
+      detail.showCatMgr = true;
+      render();
     }
-    detail.showCatMgr=true;
   });
   document.querySelectorAll(".del-cat").forEach(el=>{
     el.addEventListener("click", async ()=>{
       const filtered = cats.filter(c=>c.id!==el.dataset.catid);
       if (detail.tab==="item") {
-        const base = sharedCategories || {};
-        await saveSharedCategories({...base, item:filtered});
+        sharedCategories = {...(sharedCategories||{}), item: filtered};
+        detail.showCatMgr = true;
+        render();
+        saveSharedCategories(sharedCategories);
       } else {
         await update({categories:{...categories, todo:filtered}});
+        detail.showCatMgr = true;
+        render();
       }
     });
   });
