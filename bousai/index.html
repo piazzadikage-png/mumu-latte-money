@@ -1,100 +1,383 @@
-<!--
-=====================================================================
- Firebase Authentication ログインゲート 組み込みスニペット
-=====================================================================
-使い方：
-1. あなたの bousai-app.html を開く
-2. <body> の一番最初の行のすぐ後ろに、下記「① 貼り付けるHTML」を貼り付ける
-3. #app の外側を包む形にするので、既存の
-     <div id="app"> ... </div>
-   をそのまま残したまま、その周りに #authGate と #appWrap を追加する
-4. </body> の直前（既存の <script> タグより後）に「② 貼り付けるJS」を追加する
-5. YOUR_FIREBASE_CONFIG と ALLOWED_EMAILS をあなたの情報に書き換える
-6. 既存コードの一番下にある
-     renderAll();
-   という1行だけを削除する（ログイン成功後にこちらのスクリプトが呼び出します）
-=====================================================================
--->
-
-<!-- ① 貼り付けるHTML（<body> の直後、既存の <div id="app"> の外側に配置） -->
-
-<div id="authGate" style="
-  position:fixed;inset:0;background:#151F29;color:#F5F1E6;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:16px;font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;
-  z-index:999;text-align:center;padding:24px;">
-  <div style="font-size:15px;font-weight:800;letter-spacing:.05em;">防災ファイル</div>
-  <div id="authStatus" style="font-size:13px;color:#B9C3CC;">サインインしてください</div>
-  <button id="googleLoginBtn" style="
-    padding:12px 22px;border-radius:10px;border:none;background:#2A7F62;
-    color:#fff;font-weight:700;font-size:14px;">Googleでログイン</button>
-</div>
-
-<div id="appWrap" style="display:none;">
-  <!-- ここに既存の <div id="app"> ...(トップバー・コンテンツ・タブバー)... </div> をそのまま入れる -->
-</div>
-
-
-<!-- ② 貼り付けるJS（既存の <script> の後、</body> の直前） -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import {
-    getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
-  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-
-  // ★①手順4で取得した firebaseConfig をそのまま貼り付ける
-  const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
-  };
-
-  // ★ここにログインを許可したいメールアドレスを列挙する（Googleアカウントのメール）
-  const ALLOWED_EMAILS = [
-    "your-address@gmail.com",
-    "partner-address@gmail.com"
-  ];
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const provider = new GoogleAuthProvider();
-
-  const authGate = document.getElementById('authGate');
-  const appWrap = document.getElementById('appWrap');
-  const authStatus = document.getElementById('authStatus');
-
-  document.getElementById('googleLoginBtn').onclick = () => {
-    signInWithPopup(auth, provider).catch(err => {
-      authStatus.textContent = 'ログインに失敗しました: ' + err.message;
-    });
-  };
-
-  let appStarted = false;
-
-  onAuthStateChanged(auth, (user) => {
-    if (user && ALLOWED_EMAILS.includes(user.email)) {
-      // 許可されたメールアドレス → アプリを表示
-      authGate.style.display = 'none';
-      appWrap.style.display = '';
-      if (!appStarted) {
-        appStarted = true;
-        // 既存のアプリ描画関数を呼び出す（元コードの末尾の renderAll(); の代わり）
-        if (typeof renderAll === 'function') renderAll();
-      }
-    } else if (user) {
-      // ログインはできたが許可リストにないメールアドレス → 拒否してサインアウト
-      authStatus.textContent = 'このメールアドレスは登録されていません: ' + user.email;
-      appWrap.style.display = 'none';
-      authGate.style.display = 'flex';
-      signOut(auth);
-    } else {
-      // 未ログイン
-      appWrap.style.display = 'none';
-      authGate.style.display = 'flex';
-      authStatus.textContent = 'サインインしてください';
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>防災ファイル</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background-color: #12181F;
+      color: #F5F1E6;
     }
-  });
-</script>
+    .tab-active {
+      color: #2A7F62;
+      border-bottom: 3px solid #2A7F62;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-emerald-500 selection:text-white">
+
+  <!-- ==================== Auth Gate (未ログイン時画面) ==================== -->
+  <div id="authGate" class="fixed inset-0 bg-[#151F29] text-[#F5F1E6] flex flex-col items-center justify-center p-6 text-center z-50 transition-opacity duration-300">
+    <div class="max-w-md w-full bg-[#1C2733] border border-gray-700/50 p-8 rounded-2xl shadow-2xl space-y-6">
+      <div class="w-16 h-16 bg-emerald-600/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto text-3xl">
+        <i class="fa-solid font-bold fa-shield-halved"></i>
+      </div>
+      <div>
+        <h1 class="text-2xl font-black tracking-wide text-white">防災ファイル</h1>
+        <p class="text-xs text-gray-400 mt-1">家族の安心と備えをまもる共有ノート</p>
+      </div>
+
+      <div id="authStatus" class="text-sm text-gray-300 bg-[#151F29] p-3 rounded-lg border border-gray-800">
+        Googleアカウントでサインインしてください
+      </div>
+
+      <!-- メールアドレス許可設定エリア -->
+      <div class="text-left text-xs bg-gray-800/60 p-3 rounded-xl border border-gray-700/50 space-y-2">
+        <label class="font-bold text-gray-300 block">許可するメールアドレスの設定:</label>
+        <p class="text-gray-400">ログインに使用するご自身のGoogleメールアドレス（Gmail）を入力してください。</p>
+        <input type="email" id="allowedEmailInput" placeholder="example@gmail.com" class="w-full bg-[#151F29] border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-emerald-500">
+        <button id="saveEmailBtn" class="w-full bg-gray-700 hover:bg-gray-600 text-white py-1.5 rounded font-semibold text-xs transition">
+          <i class="fa-solid fa-save mr-1"></i> メールアドレスを保持する
+        </button>
+      </div>
+
+      <button id="googleLoginBtn" class="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg hover:shadow-emerald-900/30 transition flex items-center justify-center gap-3">
+        <i class="fa-brands fa-google text-lg"></i>
+        <span>Googleでログイン</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== メインアプリ（ログイン後画面） ==================== -->
+  <div id="appWrap" style="display:none;" class="flex-1 flex flex-col">
+    <!-- ヘッダー -->
+    <header class="bg-[#1C2733] border-b border-gray-800 sticky top-0 z-40 px-4 py-3 shadow-md">
+      <div class="max-w-3xl mx-auto flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="w-9 h-9 bg-emerald-600 text-white rounded-lg flex items-center justify-center font-bold">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <div>
+            <h1 class="font-bold text-base leading-tight text-white">防災ファイル</h1>
+            <p id="userEmailDisplay" class="text-xs text-gray-400">サインイン中</p>
+          </div>
+        </div>
+        <button id="logoutBtn" class="text-xs bg-gray-800 hover:bg-red-900/40 text-gray-300 hover:text-red-400 px-3 py-1.5 rounded-lg border border-gray-700 transition flex items-center gap-1.5">
+          <i class="fa-solid fa-right-from-bracket"></i>
+          <span>ログアウト</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- ナビゲーションタブ -->
+    <nav class="bg-[#19232F] border-b border-gray-800 sticky top-[61px] z-30">
+      <div class="max-w-3xl mx-auto flex text-xs md:text-sm font-medium text-gray-400 overflow-x-auto">
+        <button onclick="switchTab('stockpile')" id="tab-stockpile" class="flex-1 py-3 px-2 text-center whitespace-nowrap tab-active transition flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-boxes-packing"></i>
+          <span>備蓄品リスト</span>
+        </button>
+        <button onclick="switchTab('contacts')" id="tab-contacts" class="flex-1 py-3 px-2 text-center whitespace-nowrap hover:text-gray-200 transition flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-phone"></i>
+          <span>緊急連絡先</span>
+        </button>
+        <button onclick="switchTab('memo')" id="tab-memo" class="flex-1 py-3 px-2 text-center whitespace-nowrap hover:text-gray-200 transition flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-note-sticky"></i>
+          <span>家族メモ</span>
+        </button>
+        <button onclick="switchTab('guide')" id="tab-guide" class="flex-1 py-3 px-2 text-center whitespace-nowrap hover:text-gray-200 transition flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-book-medical"></i>
+          <span>災害ダイヤル</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- メインコンテンツ -->
+    <main class="max-w-3xl mx-auto w-full p-4 flex-1 space-y-6">
+
+      <!-- タブ1: 備蓄品リスト -->
+      <section id="sec-stockpile" class="space-y-4">
+        <div class="bg-[#1C2733] p-4 rounded-xl border border-gray-800 flex justify-between items-center">
+          <div>
+            <h2 class="font-bold text-white text-lg">備蓄品チェックリスト</h2>
+            <p class="text-xs text-gray-400">水・食料・防災用品の準備状況</p>
+          </div>
+          <div class="text-right">
+            <span id="stockProgressText" class="text-xl font-black text-emerald-400">0/0</span>
+            <p class="text-[10px] text-gray-400">準備完了</p>
+          </div>
+        </div>
+
+        <div class="flex gap-2">
+          <input type="text" id="newItemName" placeholder="新しい備蓄品（例：保存水 2L×6本）" class="flex-1 bg-[#1C2733] border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+          <button onclick="addStockpileItem()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-lg text-sm transition">
+            追加
+          </button>
+        </div>
+
+        <ul id="stockpileList" class="space-y-2">
+          <!-- 動的読み込み -->
+        </ul>
+      </section>
+
+      <!-- タブ2: 緊急連絡先 & 避難所 -->
+      <section id="sec-contacts" class="space-y-4 hidden">
+        <div class="bg-[#1C2733] p-4 rounded-xl border border-gray-800">
+          <h2 class="font-bold text-white text-lg">緊急連絡先 & 避難場所</h2>
+          <p class="text-xs text-gray-400">ワンタップで発信・確認できます</p>
+        </div>
+
+        <!-- プリセット緊急発信 -->
+        <div class="grid grid-cols-2 gap-3">
+          <a href="tel:119" class="bg-red-900/30 border border-red-700/50 p-4 rounded-xl flex items-center gap-3 hover:bg-red-900/50 transition">
+            <div class="w-10 h-10 bg-red-600 text-white rounded-full flex items-center justify-center text-lg font-bold">119</div>
+            <div>
+              <div class="font-bold text-red-200">火事・救急</div>
+              <div class="text-xs text-red-400">消防署へ電話</div>
+            </div>
+          </a>
+          <a href="tel:110" class="bg-blue-900/30 border border-blue-700/50 p-4 rounded-xl flex items-center gap-3 hover:bg-blue-900/50 transition">
+            <div class="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center text-lg font-bold">110</div>
+            <div>
+              <div class="font-bold text-blue-200">事件・事故</div>
+              <div class="text-xs text-blue-400">警察署へ電話</div>
+            </div>
+          </a>
+        </div>
+
+        <div class="bg-[#1C2733] p-4 rounded-xl border border-gray-800 space-y-3">
+          <h3 class="font-bold text-sm text-emerald-400">指定避難所メモ</h3>
+          <textarea id="evacuationMemo" placeholder="例：〇〇小学校 体育館（自宅から徒歩10分）" class="w-full bg-[#151F29] border border-gray-700 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-emerald-500 h-24"></textarea>
+          <button onclick="saveEvacuationMemo()" class="bg-gray-700 hover:bg-gray-600 text-xs text-white font-bold px-3 py-1.5 rounded transition">
+            保存する
+          </button>
+        </div>
+      </section>
+
+      <!-- タブ3: 家族の防災メモ -->
+      <section id="sec-memo" class="space-y-4 hidden">
+        <div class="bg-[#1C2733] p-4 rounded-xl border border-gray-800">
+          <h2 class="font-bold text-white text-lg">家族の防災メモ</h2>
+          <p class="text-xs text-gray-400">集合場所や安否確認ルールのメモ</p>
+        </div>
+
+        <div class="bg-[#1C2733] p-4 rounded-xl border border-gray-800 space-y-3">
+          <textarea id="familyPlanText" placeholder="・災害発生時の一次集合場所：〇〇公園&#10;・連絡が取れない場合のルール&#10;・家族それぞれの役割" class="w-full bg-[#151F29] border border-gray-700 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-emerald-500 h-48"></textarea>
+          <button onclick="saveFamilyPlan()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-lg text-sm transition">
+            メモを保存
+          </button>
+        </div>
+      </section>
+
+      <!-- タブ4: 災害用伝言ダイヤルガイド -->
+      <section id="sec-guide" class="space-y-4 hidden">
+        <div class="bg-[#1C2733] p-4 rounded-xl border border-gray-800">
+          <h2 class="font-bold text-white text-lg">災害用伝言ダイヤル (171)</h2>
+          <p class="text-xs text-gray-400">大規模災害時の安否確認サービスの使い方</p>
+        </div>
+
+        <div class="bg-[#1C2733] p-4 rounded-xl border border-gray-800 space-y-3 text-sm text-gray-300">
+          <div class="p-3 bg-amber-900/20 border border-amber-700/50 rounded-lg">
+            <span class="font-bold text-amber-400">電話番号： 171</span>
+          </div>
+          <div class="space-y-2 text-xs leading-relaxed">
+            <p class="font-bold text-white text-sm">【伝言を録音する場合】</p>
+            <ol class="list-decimal list-inside space-y-1 text-gray-300">
+              <li>171 にダイヤル</li>
+              <li>「1」を押す（暗証番号を使う場合は「3」）</li>
+              <li>市外局番からの電話番号を入力</li>
+              <li>録音する（30秒以内）</li>
+            </ol>
+          </div>
+          <div class="space-y-2 text-xs leading-relaxed pt-2 border-t border-gray-800">
+            <p class="font-bold text-white text-sm">【伝言を再生する場合】</p>
+            <ol class="list-decimal list-inside space-y-1 text-gray-300">
+              <li>171 にダイヤル</li>
+              <li>「2」を押す（暗証番号を使う場合は「4」）</li>
+              <li>市外局番からの電話番号を入力</li>
+              <li>伝言を再生する</li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- フッター -->
+    <footer class="bg-[#1C2733] border-t border-gray-800 py-3 text-center text-xs text-gray-500">
+      防災ファイル &copy; 防災・災害対策共有ノート
+    </footer>
+  </div>
+
+  <!-- JavaScript (Firebase Auth & Application) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    // Firebase 本番設定情報
+    const firebaseConfig = {
+      apiKey: "AIzaSyCFBybW0jJD2iPm0-x1FDhH5qbWFBFXeSE",
+      authDomain: "kakeibo-cea1a.firebaseapp.com",
+      projectId: "kakeibo-cea1a",
+      storageBucket: "kakeibo-cea1a.firebasestorage.app",
+      messagingSenderId: "629767950385",
+      appId: "1:629767950385:web:bef5465fe6e8bf721fc510",
+      measurementId: "G-458217LM1C"
+    };
+
+    // Firebase 初期化
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
+    const authGate = document.getElementById('authGate');
+    const appWrap = document.getElementById('appWrap');
+    const authStatus = document.getElementById('authStatus');
+    const allowedEmailInput = document.getElementById('allowedEmailInput');
+
+    // ローカルストレージから許可メールアドレスを取得
+    let savedAllowedEmail = localStorage.getItem('bousai_allowed_email') || '';
+    if (savedAllowedEmail) {
+      allowedEmailInput.value = savedAllowedEmail;
+    }
+
+    document.getElementById('saveEmailBtn').onclick = () => {
+      const email = allowedEmailInput.value.trim().toLowerCase();
+      if (email) {
+        localStorage.setItem('bousai_allowed_email', email);
+        alert('許可メールアドレスを保存しました: ' + email);
+      }
+    };
+
+    // ログイン処理
+    document.getElementById('googleLoginBtn').onclick = () => {
+      signInWithPopup(auth, provider).catch(err => {
+        authStatus.textContent = 'ログインに失敗しました: ' + err.message;
+      });
+    };
+
+    // ログアウト処理
+    document.getElementById('logoutBtn').onclick = () => {
+      signOut(auth);
+    };
+
+    // 認証状態の監視
+    onAuthStateChanged(auth, (user) => {
+      const targetAllowed = (allowedEmailInput.value || savedAllowedEmail || '').trim().toLowerCase();
+
+      if (user) {
+        // メール制限チェック (入力がある場合は合致チェック、未入力の場合は全許可)
+        if (!targetAllowed || user.email.toLowerCase() === targetAllowed) {
+          authGate.style.display = 'none';
+          appWrap.style.display = 'flex';
+          document.getElementById('userEmailDisplay').textContent = user.email;
+          initAppData();
+        } else {
+          authStatus.textContent = `未許可のアカウントです (${user.email})。指定のメールアドレスを設定してください。`;
+          appWrap.style.display = 'none';
+          authGate.style.display = 'flex';
+          signOut(auth);
+        }
+      } else {
+        appWrap.style.display = 'none';
+        authGate.style.display = 'flex';
+        authStatus.textContent = 'サインインしてください';
+      }
+    });
+
+    // ==================== アプリ内ロジック ====================
+    window.stockpileData = JSON.parse(localStorage.getItem('bousai_stockpile')) || [
+      { id: 1, name: '飲料水 (1人1日3L × 3日分)', checked: true },
+      { id: 2, name: '非常食 (アルファ米・缶詰等)', checked: true },
+      { id: 3, name: '携帯ラジオ & 予備電池', checked: false },
+      { id: 4, name: '救急箱・常用薬', checked: false },
+      { id: 5, name: 'モバイルバッテリー', checked: true }
+    ];
+
+    function renderStockpile() {
+      const listEl = document.getElementById('stockpileList');
+      listEl.innerHTML = '';
+      let doneCount = 0;
+
+      window.stockpileData.forEach((item, index) => {
+        if (item.checked) doneCount++;
+        const li = document.createElement('li');
+        li.className = 'bg-[#1C2733] border border-gray-800 p-3 rounded-lg flex items-center justify-between gap-3';
+        li.innerHTML = `
+          <label class="flex items-center gap-3 cursor-pointer flex-1">
+            <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleStockItem(${index})" class="w-4 h-4 accent-emerald-500 rounded">
+            <span class="${item.checked ? 'line-through text-gray-500' : 'text-gray-200'} text-sm">${item.name}</span>
+          </label>
+          <button onclick="deleteStockItem(${index})" class="text-gray-500 hover:text-red-400 text-xs px-2 py-1">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        `;
+        listEl.appendChild(li);
+      });
+
+      document.getElementById('stockProgressText').textContent = `${doneCount}/${window.stockpileData.length}`;
+      localStorage.setItem('bousai_stockpile', JSON.stringify(window.stockpileData));
+    }
+
+    window.toggleStockItem = (index) => {
+      window.stockpileData[index].checked = !window.stockpileData[index].checked;
+      renderStockpile();
+    };
+
+    window.deleteStockItem = (index) => {
+      window.stockpileData.splice(index, 1);
+      renderStockpile();
+    };
+
+    window.addStockpileItem = () => {
+      const input = document.getElementById('newItemName');
+      const val = input.value.trim();
+      if (val) {
+        window.stockpileData.push({ id: Date.now(), name: val, checked: false });
+        input.value = '';
+        renderStockpile();
+      }
+    };
+
+    window.saveEvacuationMemo = () => {
+      const text = document.getElementById('evacuationMemo').value;
+      localStorage.setItem('bousai_evac_memo', text);
+      alert('避難所メモを保存しました');
+    };
+
+    window.saveFamilyPlan = () => {
+      const text = document.getElementById('familyPlanText').value;
+      localStorage.setItem('bousai_family_plan', text);
+      alert('家族メモを保存しました');
+    };
+
+    function initAppData() {
+      renderStockpile();
+      document.getElementById('evacuationMemo').value = localStorage.getItem('bousai_evac_memo') || '';
+      document.getElementById('familyPlanText').value = localStorage.getItem('bousai_family_plan') || '';
+    }
+
+    // タブ切り替え
+    window.switchTab = (tabName) => {
+      const tabs = ['stockpile', 'contacts', 'memo', 'guide'];
+      tabs.forEach(t => {
+        document.getElementById(`sec-${t}`).classList.add('hidden');
+        document.getElementById(`tab-${t}`).classList.remove('tab-active');
+      });
+      document.getElementById(`sec-${tabName}`).classList.remove('hidden');
+      document.getElementById(`tab-${tabName}`).classList.add('tab-active');
+    };
+  </script>
+</body>
+</html>
