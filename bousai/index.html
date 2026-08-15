@@ -247,20 +247,6 @@ input,select,textarea{font-family:inherit;}
 </style>
 </head>
 <body>
-
-<div id="authGate" style="
-  position:fixed;inset:0;background:#151F29;color:#F5F1E6;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:16px;font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Yu Gothic',sans-serif;
-  z-index:999;text-align:center;padding:24px;">
-  <div style="font-size:15px;font-weight:800;letter-spacing:.05em;">防災アプリ</div>
-  <div id="authStatus" style="font-size:13px;color:#B9C3CC;">サインインしてください</div>
-  <button id="googleLoginBtn" style="
-    padding:12px 22px;border-radius:10px;border:none;background:#2A7F62;
-    color:#fff;font-weight:700;font-size:14px;">Googleでログイン</button>
-</div>
-
-<div id="appWrap" style="display:none;">
 <div id="app">
   <div class="hazard-stripe"></div>
   <div id="topbar">
@@ -278,7 +264,6 @@ input,select,textarea{font-family:inherit;}
   </div>
   <div id="content"></div>
   <div id="tabbar"></div>
-</div>
 </div>
 
 <script>
@@ -988,68 +973,9 @@ function renderAll(){
   else if(state.tab==='tasks') renderTasks();
 }
 
-// renderAll() はログイン確認後、下のFirebase認証スクリプトから呼び出します
-</script>
-
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import {
-    getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
-  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-
-  // kakeibo / travel-planner と同じ手順で取得したFirebase設定
-  const firebaseConfig = {
-    apiKey: "AIzaSyCFBybW0jJD2iPm0-x1FDhH5qbWFBFXeSE",
-    authDomain: "kakeibo-cea1a.firebaseapp.com",
-    projectId: "kakeibo-cea1a",
-    storageBucket: "kakeibo-cea1a.firebasestorage.app",
-    messagingSenderId: "629767950385",
-    appId: "1:629767950385:web:bef5465fe6e8bf721fc510",
-    measurementId: "G-458217LM1C"
-  };
-
-  // ★ここにログインを許可したいGoogleアカウントのメールアドレスを列挙してください
-  const ALLOWED_EMAILS = [
-    "yumi0317mumu@gmail.com",
-    "yumi17march@gmail.com",
-    "piazzadikage@gmail.com"
-  ];
-
-  const fbApp = initializeApp(firebaseConfig);
-  const auth = getAuth(fbApp);
-  const provider = new GoogleAuthProvider();
-
-  const authGate = document.getElementById('authGate');
-  const appWrap = document.getElementById('appWrap');
-  const authStatus = document.getElementById('authStatus');
-
-  document.getElementById('googleLoginBtn').onclick = () => {
-    signInWithPopup(auth, provider).catch(err => {
-      authStatus.textContent = 'ログインに失敗しました: ' + err.message;
-    });
-  };
-
-  let appStarted = false;
-
-  onAuthStateChanged(auth, (user) => {
-    if (user && ALLOWED_EMAILS.includes(user.email)) {
-      authGate.style.display = 'none';
-      appWrap.style.display = '';
-      if (!appStarted) {
-        appStarted = true;
-        if (typeof renderAll === 'function') renderAll();
-      }
-    } else if (user) {
-      authStatus.textContent = 'このメールアドレスは登録されていません: ' + user.email;
-      appWrap.style.display = 'none';
-      authGate.style.display = 'flex';
-      signOut(auth);
-    } else {
-      appWrap.style.display = 'none';
-      authGate.style.display = 'flex';
-      authStatus.textContent = 'サインインしてください';
-    }
-  });
+window.onload = function(){
+  renderAll();
+};
 </script>
 </body>
 </html>
