@@ -366,7 +366,7 @@ function loadState(){
     return Object.assign(defaultState(), parsed);
   }catch(e){ return defaultState(); }
 }
-let state = loadState();
+var state = loadState();
 function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 function uid(){ return 'id'+Math.random().toString(36).slice(2,9); }
 
@@ -996,6 +996,9 @@ function renderAll(){
   import {
     getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import {
+    getFirestore, doc, setDoc, onSnapshot, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   // kakeibo / travel-planner と同じ手順で取得したFirebase設定
   const firebaseConfig = {
@@ -1018,6 +1021,49 @@ function renderAll(){
   const fbApp = initializeApp(firebaseConfig);
   const auth = getAuth(fbApp);
   const provider = new GoogleAuthProvider();
+  const db = getFirestore(fbApp);
+
+  // 家族で共有する1つのドキュメントにすべてのデータをまとめて同期する
+  const SHARED_DOC = doc(db, "bousai", "shared-data");
+  let pushTimer = null;
+  let rendered = false;
+
+  // 既存の save()（localStorageへの保存）はそのまま使いつつ、
+  // 呼び出されるたびにFirestoreへも書き込むよう拡張する
+  const originalSave = window.save;
+  window.save = function(){
+    originalSave();
+    clearTimeout(pushTimer);
+    pushTimer = setTimeout(()=>{
+      const payload = Object.assign({}, window.state, {_updatedAt: serverTimestamp()});
+      setDoc(SHARED_DOC, payload).catch(err=>console.error('Firestore保存エラー', err));
+    }, 500);
+  };
+
+  function startFirestoreSync(){
+    onSnapshot(SHARED_DOC, (snap)=>{
+      if(snap.metadata.hasPendingWrites){
+        // 自分の書き込みが返ってきただけ。初回だけ描画する
+        if(!rendered){ rendered = true; renderAll(); }
+        return;
+      }
+      if(snap.exists()){
+        const remote = snap.data();
+        delete remote._updatedAt;
+        window.state = Object.assign(defaultState(), remote);
+        try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(window.state)); }catch(e){}
+      } else {
+        // まだ共有データがない → 今の内容(自分の端末のデータ)を初回データとして送る
+        const payload = Object.assign({}, window.state, {_updatedAt: serverTimestamp()});
+        setDoc(SHARED_DOC, payload).catch(err=>console.error('Firestore初期保存エラー', err));
+      }
+      rendered = true;
+      renderAll();
+    }, (err)=>{
+      console.error('Firestore同期エラー(オフラインの可能性)', err);
+      if(!rendered){ rendered = true; renderAll(); } // オフライン時はローカルデータで表示
+    });
+  }
 
   const authGate = document.getElementById('authGate');
   const appWrap = document.getElementById('appWrap');
@@ -1037,7 +1083,7 @@ function renderAll(){
       appWrap.style.display = '';
       if (!appStarted) {
         appStarted = true;
-        if (typeof renderAll === 'function') renderAll();
+        startFirestoreSync();
       }
     } else if (user) {
       authStatus.textContent = 'このメールアドレスは登録されていません: ' + user.email;
