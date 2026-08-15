@@ -664,8 +664,22 @@ function openStockForm(item){
     draft.expiry = wrap.querySelector('#f_exp').value;
     draft.note = wrap.querySelector('#f_note').value;
     draft.have = draft.cur >= draft.need && draft.need>0 ? true : draft.have;
-    if(isNew) state.stock.push(draft);
-    else Object.assign(item, draft);
+    
+    // 不要な画面状態プロパティの混入を防ぐため純粋データオブジェクトを作成
+    const cleanItem = {
+      id: draft.id,
+      name: draft.name,
+      category: draft.category,
+      have: draft.have,
+      need: draft.need,
+      cur: draft.cur,
+      expiry: draft.expiry,
+      note: draft.note
+    };
+
+    if(isNew) state.stock.push(cleanItem);
+    else Object.assign(item, cleanItem);
+    
     save(); wrap.remove(); renderStock();
   };
 }
@@ -987,8 +1001,6 @@ function renderAll(){
   else if(state.tab==='evac') renderEvac();
   else if(state.tab==='tasks') renderTasks();
 }
-
-// renderAll() はログイン確認後、下のFirebase認証スクリプトから呼び出します
 </script>
 
 <script type="module">
@@ -1000,7 +1012,6 @@ function renderAll(){
     getFirestore, doc, setDoc, onSnapshot, serverTimestamp
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  // kakeibo / travel-planner と同じ手順で取得したFirebase設定
   const firebaseConfig = {
     apiKey: "AIzaSyCFBybW0jJD2iPm0-x1FDhH5qbWFBFXeSE",
     authDomain: "kakeibo-cea1a.firebaseapp.com",
@@ -1011,7 +1022,6 @@ function renderAll(){
     measurementId: "G-458217LM1C"
   };
 
-  // ★ここにログインを許可したいGoogleアカウントのメールアドレスを列挙してください
   const ALLOWED_EMAILS = [
     "yumi0317mumu@gmail.com",
     "yumi17march@gmail.com",
@@ -1023,45 +1033,62 @@ function renderAll(){
   const provider = new GoogleAuthProvider();
   const db = getFirestore(fbApp);
 
-  // 家族で共有する1つのドキュメントにすべてのデータをまとめて同期する
   const SHARED_DOC = doc(db, "bousai", "shared-data");
   let pushTimer = null;
   let rendered = false;
 
-  // 既存の save()（localStorageへの保存）はそのまま使いつつ、
-  // 呼び出されるたびにFirestoreへも書き込むよう拡張する
   const originalSave = window.save;
   window.save = function(){
-    originalSave();
+    originalSave(); // ローカルストレージ(localStorage)への保存
     clearTimeout(pushTimer);
     pushTimer = setTimeout(()=>{
-      const payload = Object.assign({}, window.state, {_updatedAt: serverTimestamp()});
+      // 各端末の表示状態(tab, filter, openPhase)を除いた純データのみをFirestoreへ保存
+      const payload = {
+        categories: window.state.categories || [],
+        stock: window.state.stock || [],
+        tasks: window.state.tasks || [],
+        actionChecks: window.state.actionChecks || {},
+        evac: window.state.evac || {},
+        _updatedAt: serverTimestamp()
+      };
       setDoc(SHARED_DOC, payload).catch(err=>console.error('Firestore保存エラー', err));
-    }, 500);
+    }, 400);
   };
 
   function startFirestoreSync(){
     onSnapshot(SHARED_DOC, (snap)=>{
+      if(!snap.exists()){
+        // 初回などドキュメントがない場合はローカル状態を保存
+        window.save();
+        rendered = true;
+        renderAll();
+        return;
+      }
+
+      // 自身が変更・送信中の保留状態(hasPendingWrites)の場合は受領処理をスキップ
       if(snap.metadata.hasPendingWrites){
-        // 自分の書き込みが返ってきただけ。初回だけ描画する
         if(!rendered){ rendered = true; renderAll(); }
         return;
       }
-      if(snap.exists()){
-        const remote = snap.data();
-        delete remote._updatedAt;
-        window.state = Object.assign(defaultState(), remote);
+
+      const remote = snap.data();
+      if(remote){
+        // 共有データ（備蓄、タスク、避難所、アクション、カテゴリ）のみを安全に反映
+        if(Array.isArray(remote.categories)) window.state.categories = remote.categories;
+        if(Array.isArray(remote.stock)) window.state.stock = remote.stock;
+        if(Array.isArray(remote.tasks)) window.state.tasks = remote.tasks;
+        if(remote.actionChecks) window.state.actionChecks = remote.actionChecks;
+        if(remote.evac) window.state.evac = remote.evac;
+
+        // 最新の共有データでローカルストレージも更新
         try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(window.state)); }catch(e){}
-      } else {
-        // まだ共有データがない → 今の内容(自分の端末のデータ)を初回データとして送る
-        const payload = Object.assign({}, window.state, {_updatedAt: serverTimestamp()});
-        setDoc(SHARED_DOC, payload).catch(err=>console.error('Firestore初期保存エラー', err));
       }
+
       rendered = true;
       renderAll();
     }, (err)=>{
-      console.error('Firestore同期エラー(オフラインの可能性)', err);
-      if(!rendered){ rendered = true; renderAll(); } // オフライン時はローカルデータで表示
+      console.error('Firestore同期エラー', err);
+      if(!rendered){ rendered = true; renderAll(); }
     });
   }
 
