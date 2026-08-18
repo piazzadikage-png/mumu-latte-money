@@ -1,1 +1,1546 @@
 
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>防災ファミリーメモ</title>
+  
+  <!-- Tailwind CSS & Google Fonts -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+JP:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --paper: #f8fafc;
+      --paper2: #f1f5f9;
+      --card: #ffffff;
+      --ink: #0f172a;
+      --ink-soft: #64748b;
+      --line: #e2e8f0;
+      --teal: #0d9488;
+      --teal-light: #ccfbf1;
+      --red: #ef4444;
+      --red-light: #fee2e2;
+      --yellow: #f59e0b;
+      --yellow-light: #fef3c7;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --paper: #0f172a;
+        --paper2: #1e293b;
+        --card: #1e293b;
+        --ink: #f8fafc;
+        --ink-soft: #94a3b8;
+        --line: #334155;
+        --teal: #14b8a6;
+        --teal-light: rgba(20,184,166,0.15);
+        --red: #f87171;
+        --red-light: rgba(239,68,68,0.15);
+        --yellow: #fbbf24;
+        --yellow-light: rgba(245,158,11,0.15);
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      font-family: 'Inter', 'Noto Sans JP', sans-serif;
+    }
+
+    body {
+      background-color: var(--paper);
+      color: var(--ink);
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+
+    /* Card & Components */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    .card.tight { padding: 12px; }
+    .card.empty { border: 1px dashed var(--line); text-align: center; color: var(--ink-soft); font-size: 13px; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      border: 1px solid var(--line);
+      background: var(--card);
+      color: var(--ink);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn.primary { background: var(--teal); color: #ffffff; border-color: var(--teal); }
+    .btn.danger { background: var(--red); color: #ffffff; border-color: var(--red); }
+    .btn.block { width: 100%; }
+
+    .btn-dashed-add {
+      width: 100%;
+      padding: 12px;
+      border: 2px dashed var(--line);
+      border-radius: 12px;
+      background: transparent;
+      color: var(--teal);
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+      text-align: center;
+      margin-bottom: 12px;
+      transition: background 0.15s;
+    }
+    .btn-dashed-add:hover { background: var(--teal-light); }
+
+    .btn-subtle-cat {
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: var(--paper2);
+      border: 1px solid var(--line);
+      color: var(--ink-soft);
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .btn-action-row { display: flex; gap: 8px; margin-bottom: 12px; }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 900;
+      color: var(--ink);
+      margin: 20px 0 10px;
+    }
+    .section-title .num {
+      background: var(--teal);
+      color: #fff;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+    }
+
+    .filter-row { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 12px; }
+    .pill-btn {
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid var(--line);
+      background: var(--card);
+      color: var(--ink-soft);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .pill-btn.active { background: var(--teal); color: #fff; border-color: var(--teal); }
+
+    .progressbar {
+      height: 8px;
+      background: var(--paper2);
+      border-radius: 9999px;
+      overflow: hidden;
+    }
+    .progressbar .fill {
+      height: 100%;
+      background: var(--teal);
+      border-radius: 9999px;
+      transition: width 0.3s ease;
+    }
+
+    /* Stock Items */
+    .stock-item {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 10px;
+      transition: border-color 0.2s;
+    }
+    .stock-item.done { border-color: rgba(13, 148, 136, 0.4); }
+    .stock-item.expiring { border-color: var(--red); }
+    .stock-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+    .stock-name { font-size: 15px; font-weight: 800; color: var(--ink); }
+    .stock-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+    
+    .tag {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: var(--paper2);
+      color: var(--ink-soft);
+    }
+    .tag.exp { background: var(--red-light); color: var(--red); }
+    .tag.priority-high { background: var(--red-light); color: var(--red); }
+    .tag.priority-mid { background: var(--yellow-light); color: var(--yellow); }
+    .tag.priority-low { background: var(--paper2); color: var(--ink-soft); }
+
+    .stock-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px dashed var(--line);
+    }
+    .qty-stepper { display: inline-flex; align-items: center; gap: 4px; background: var(--paper2); padding: 2px 4px; border-radius: 6px; }
+    .qty-stepper button { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 4px; border: none; background: var(--card); color: var(--ink); cursor: pointer; }
+
+    .stock-actions { display: flex; gap: 4px; }
+    .icon-btn { padding: 6px; border-radius: 6px; border: none; background: transparent; color: var(--ink-soft); cursor: pointer; }
+    .icon-btn:hover { background: var(--paper2); color: var(--ink); }
+
+    /* Custom Switch Toggle */
+    .toggle {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      cursor: pointer;
+      display: inline-block;
+      flex: none;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle .track {
+      position: absolute; inset: 0;
+      background: var(--line);
+      border-radius: 9999px;
+      transition: background 0.2s;
+    }
+    .toggle input:checked + .track { background: var(--teal); }
+    .toggle .knob {
+      position: absolute; top: 2px; left: 2px;
+      width: 20px; height: 20px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    .toggle input:checked ~ .knob { transform: translateX(20px); }
+
+    /* Action Timeline */
+    .timeline-item {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      position: relative;
+    }
+    .timeline-axis {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: none;
+      width: 20px;
+    }
+    .timeline-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--teal);
+      border: 3px solid var(--paper);
+      box-shadow: 0 0 0 2px var(--teal);
+      margin-top: 4px;
+    }
+    .timeline-line {
+      flex: 1;
+      width: 2px;
+      background: var(--line);
+      margin-top: 4px;
+    }
+    .timeline-content {
+      flex: 1;
+      min-width: 0;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+    }
+    .timeline-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .timeline-time { font-size: 11px; font-weight: 800; color: var(--teal); }
+    .timeline-title { font-size: 15px; font-weight: 800; color: var(--ink); }
+
+    .callout {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 12.5px;
+      line-height: 1.4;
+      margin-bottom: 10px;
+      border: 1px solid transparent;
+    }
+    .callout.warning { background: var(--yellow-light); border-color: var(--yellow); color: var(--ink); }
+    .callout.danger { background: var(--red-light); border-color: var(--red); color: var(--ink); }
+    .callout .t { font-weight: 800; margin-bottom: 2px; }
+    .callout .d { font-size: 11.5px; color: var(--ink-soft); }
+
+    .chk-item {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: 10px 12px;
+      background: var(--paper2);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      gap: 8px;
+    }
+    .chk-content { flex: 1; min-width: 0; }
+    .chk-text { font-size: 13px; font-weight: 700; color: var(--ink); line-height: 1.4; margin-bottom: 6px; }
+    .chk-checks { display: flex; gap: 12px; align-items: center; }
+    .user-chk { font-size: 12px; font-weight: 700; color: var(--ink-soft); display: flex; align-items: center; gap: 4px; cursor: pointer; }
+    .user-chk input { accent-color: var(--teal); width: 16px; height: 16px; cursor: pointer; }
+
+    /* Form Fields */
+    .field { margin-bottom: 12px; }
+    .field label { display: block; font-size: 11.5px; font-weight: 700; color: var(--ink-soft); margin-bottom: 4px; }
+    .field input, .field select, .field textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: var(--paper2);
+      color: var(--ink);
+      font-size: 13px;
+      outline: none;
+    }
+    .field textarea { min-height: 70px; resize: vertical; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    .map-upload {
+      border: 2px dashed var(--line);
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+      color: var(--ink-soft);
+      position: relative;
+      margin-top: 8px;
+      cursor: pointer;
+    }
+    .map-upload input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    .map-preview { width: 100%; max-height: 250px; object-fit: cover; border-radius: 10px; margin-top: 10px; border: 1px solid var(--line); }
+
+    /* Task Item */
+    .task-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 10px;
+    }
+    .task-item.done { opacity: 0.6; }
+    .task-title { font-size: 14px; font-weight: 800; color: var(--ink); }
+    .task-desc { font-size: 12px; color: var(--ink-soft); margin-top: 4px; line-height: 1.4; }
+    .task-url { font-size: 11.5px; color: var(--teal); font-weight: 700; margin-top: 6px; display: inline-flex; align-items: center; gap: 4px; text-decoration: none; }
+
+    /* Bottom Navigation Tab Bar */
+    #tabbar {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 520px;
+      background: var(--card);
+      border-top: 1px solid var(--line);
+      display: flex;
+      justify-content: space-around;
+      padding: 6px 0 max(8px, env(safe-area-inset-bottom));
+      z-index: 40;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+    }
+    .tab-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      border: none;
+      background: transparent;
+      color: var(--ink-soft);
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      flex: 1;
+      padding: 4px 0;
+    }
+    .tab-item.active { color: var(--teal); }
+
+    .empty { text-align: center; padding: 24px; color: var(--ink-soft); font-size: 13px; background: var(--card); border: 1px dashed var(--line); border-radius: 12px; }
+  </style>
+</head>
+<body>
+
+  <!-- Auth Gate Screen -->
+  <div id="authGate" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; text-align: center; background: var(--paper); color: var(--ink);">
+    <div style="background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 28px 20px; max-width: 380px; width: 100%; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);">
+      <div style="font-size: 42px; margin-bottom: 12px;">🚨🏠</div>
+      <h1 style="font-size: 20px; font-weight: 900; margin-bottom: 6px;">防災ファミリーメモ</h1>
+      <p style="font-size: 12.5px; color: var(--ink-soft); margin-bottom: 20px; line-height: 1.5;">家族全員でリアルタイム共有する<br>災害備蓄・緊急時アクション共有アプリ</p>
+      <div id="authStatus" style="font-size: 12px; color: var(--red); font-weight: 700; margin-bottom: 14px;">サインインしてください</div>
+      <button id="googleLoginBtn" class="btn primary block" style="padding: 12px; font-size: 14px; font-weight: 800;">
+        Googleアカウントでサインイン
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Application Wrapper -->
+  <div id="appWrap" style="display: none; max-width: 520px; margin: 0 auto; padding-bottom: 80px; min-height: 100vh; background: var(--paper);">
+    <header style="position: sticky; top: 0; background: var(--card); border-bottom: 1px solid var(--line); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; z-index: 30;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 20px;">🛡️</span>
+        <span style="font-size: 16px; font-weight: 900; color: var(--ink);">防災ファミリーメモ</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <span style="width: 8px; height: 8px; border-radius: 50%; background: #22c55e; display: inline-block;"></span>
+        <span style="font-size: 11px; font-weight: 700; color: var(--ink-soft);">リアルタイム同期</span>
+      </div>
+    </header>
+
+    <main id="content" style="padding: 16px;"></main>
+
+    <nav id="tabbar"></nav>
+  </div>
+
+<script>
+const STORAGE_KEY = 'family_bousai_app_v1';
+
+function uid() {
+  return Math.random().toString(36).substr(2, 9);
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function icon(name) {
+  const icons = {
+    minus: `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 12H4"/></svg>`,
+    plus: `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>`,
+    list: `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>`,
+    trash: `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>`,
+    edit: `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>`,
+    danger: `<svg class="w-5 h-5" style="color:var(--red);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>`,
+    warn: `<svg class="w-5 h-5" style="color:var(--yellow);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>`,
+    cam: `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>`,
+    link: `<svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>`,
+    home: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>`,
+    stock: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>`,
+    action: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>`,
+    evac: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>`,
+    tasks: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`
+  };
+  return icons[name] || '';
+}
+
+function defaultState() {
+  return {
+    tab: 'home',
+    filter: 'all',
+    filterCategory: 'all',
+    categories: [
+      { key: 'human', label: '人間用' },
+      { key: 'pet', label: 'ペット用' },
+      { key: 'hygiene', label: '衛生用品' },
+      { key: 'tool', label: '道具・インフラ' }
+    ],
+    stock: [
+      { id: 's1', name: '保存水 (2L)', category: 'human', have: true, need: 18, cur: 18, expiry: '2028-06-01', note: 'パントリー下段' },
+      { id: 's2', name: 'アルファ化米', category: 'human', have: false, need: 15, cur: 8, expiry: '2026-10-15', note: 'キッチンの非常食箱' },
+      { id: 's3', name: '簡易トイレ (50回分)', category: 'hygiene', have: true, need: 1, cur: 1, expiry: '', note: 'トイレ上部棚' },
+      { id: 's4', name: 'モバイルバッテリー 20000mAh', category: 'tool', have: true, need: 2, cur: 2, expiry: '', note: 'リビングの引き出し（満充電維持）' },
+      { id: 's5', name: 'ペットフード（ドライ）', category: 'pet', have: false, need: 5, cur: 2, expiry: '2026-09-20', note: 'ストック棚' }
+    ],
+    phases: [
+      {
+        key: 'p1',
+        title: '発災〜3分',
+        sub: '発災直後の最優先行動',
+        warnings: [
+          { type: 'danger', title: '余震と落下物に厳重警戒', body: '頭部を保護し、窓ガラスや大型家具から離れてください。' }
+        ],
+        items: [
+          { id: 'p1_1', text: '頭部を保護し、揺れが収まるまで安全な場所で待機' },
+          { id: 'p1_2', text: '火元（ガステーブル等）の安全確認・消火' },
+          { id: 'p1_3', text: '玄関ドアを開けて避難経路（脱出口）を確保' }
+        ]
+      },
+      {
+        key: 'p2',
+        title: '3分〜30分',
+        sub: '安全確認と家族連絡',
+        warnings: [
+          { type: 'warning', title: '通電火災防止', body: '避難時は必ずブレーカーを落としてください。' }
+        ],
+        items: [
+          { id: 'p2_1', text: '家族の安否確認（Naoki ⇔ Yumiko）' },
+          { id: 'p2_2', text: '家の中の被害状況・ガス漏れ・漏水の確認' },
+          { id: 'p2_3', text: 'ブレーカー落としとガスの元栓締め' }
+        ]
+      },
+      {
+        key: 'p3',
+        title: '30分〜3時間',
+        sub: '避難判断と持ち出し',
+        warnings: [],
+        items: [
+          { id: 'p3_1', text: '津波・倒壊リスクの評価と避難場所決定' },
+          { id: 'p3_2', text: '非常用持ち出しリュックの取り出し' },
+          { id: 'p3_3', text: '近隣住民への声かけ・安否状況確認' }
+        ]
+      },
+      {
+        key: 'p4',
+        title: '3時間〜3日',
+        sub: '在宅避難・備蓄生活',
+        warnings: [],
+        items: [
+          { id: 'p4_1', text: '備蓄水の確保と給水所情報の収集' },
+          { id: 'p4_2', text: '簡易トイレの設置と衛生管理' },
+          { id: 'p4_3', text: 'デマ情報に惑わされず自治体・公式情報の確認' }
+        ]
+      }
+    ],
+    actionChecks: {},
+    evac: {
+      primaryName: '近くの公園',
+      primaryAddress: '福岡市中央区〇〇 1丁目',
+      primaryRule: '震度6以上で自動的にここに合流。15分待機して会えなければ指定避難所へ',
+      shelterName: '〇〇小学校',
+      shelterAddress: '福岡市中央区〇〇 2-3-4',
+      shelterTel: '092-123-4567',
+      shelterPetRule: 'ケージ必須、飼育場所は体育館外の軒下スペース',
+      routeText: '大通り沿いの歩道を通る。古いブロック塀の多い細い裏道は避ける。',
+      mapImage: ''
+    },
+    tasks: [
+      { id: 't1', title: '大型家具の転倒防止金具の設置', desc: '寝室のタンスにL字金具を取り付ける', url: '', done: false, priority: 'high' },
+      { id: 't2', title: '災害用伝言ダイヤル(171)の練習', desc: '体験利用日に家族で録音テストを実施する', url: 'https://www.ntt-east.co.jp/saigai/171/', done: true, priority: 'mid' }
+    ]
+  };
+}
+
+let state = defaultState();
+
+try {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    state = Object.assign(defaultState(), JSON.parse(saved));
+  }
+} catch (e) {
+  console.error('Local storage read error', e);
+}
+
+function save() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch (e) {}
+}
+
+window.save = save;
+window.state = state;
+
+function isExpiringSoon(expiryStr) {
+  if (!expiryStr) return false;
+  const exp = new Date(expiryStr);
+  if (isNaN(exp.getTime())) return false;
+  const now = new Date();
+  const diffTime = exp - now;
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays >= 0 && diffDays <= 30;
+}
+
+function isExpired(expiryStr) {
+  if (!expiryStr) return false;
+  const exp = new Date(expiryStr);
+  if (isNaN(exp.getTime())) return false;
+  const now = new Date();
+  return exp < now;
+}
+
+function getCategoryLabel(key) {
+  const c = state.categories.find(x => x.key === key);
+  return c ? c.label : '未分類';
+}
+
+function renderTabbar() {
+  const tabs = [
+    { key: 'home', label: 'ホーム', icon: icon('home') },
+    { key: 'stock', label: '備蓄品', icon: icon('stock') },
+    { key: 'action', label: '発災時', icon: icon('action') },
+    { key: 'evac', label: '避難所', icon: icon('evac') },
+    { key: 'tasks', label: '準備課題', icon: icon('tasks') }
+  ];
+
+  const html = tabs.map(t => `
+    <button class="tab-item ${state.tab === t.key ? 'active' : ''}" data-tab="${t.key}">
+      ${t.icon}
+      <span>${t.label}</span>
+    </button>
+  `).join('');
+
+  document.getElementById('tabbar').innerHTML = html;
+
+  document.querySelectorAll('#tabbar .tab-item').forEach(b => {
+    b.onclick = () => {
+      state.tab = b.dataset.tab;
+      save();
+      renderAll();
+    };
+  });
+}
+
+function renderHome() {
+  const totalStock = state.stock.length;
+  const doneStock = state.stock.filter(s => s.have).length;
+  const stockPct = totalStock ? Math.round(doneStock / totalStock * 100) : 0;
+
+  const totalTasks = state.tasks.length;
+  const doneTasks = state.tasks.filter(t => t.done).length;
+  const taskPct = totalTasks ? Math.round(doneTasks / totalTasks * 100) : 0;
+
+  const expiringSoon = state.stock.filter(s => isExpiringSoon(s.expiry) || isExpired(s.expiry));
+  const highPriorityTasks = state.tasks.filter(t => !t.done && t.priority === 'high');
+
+  let html = `
+    <div class="card" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #fff; padding: 18px; margin-bottom: 16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <div>
+          <div style="font-size:11px; text-transform:uppercase; letter-spacing:1px; color:#94a3b8; font-weight:700;">FAMILY DISASTER DASHBOARD</div>
+          <div style="font-size:18px; font-weight:900; margin-top:2px;">防災準備ステータス</div>
+        </div>
+        <span class="tag" style="background:rgba(20,184,166,0.2); color:#2dd4bf; border:1px solid rgba(45,212,191,0.3); font-weight:700;">共有同期中</span>
+      </div>
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:10px;">
+        <div style="background:rgba(255,255,255,0.06); padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,0.1);">
+          <div style="font-size:11px; color:#94a3b8;">備蓄達成率</div>
+          <div style="font-size:22px; font-weight:900; color:#2dd4bf; margin-top:2px;">${stockPct}%</div>
+          <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">${doneStock}/${totalStock} 品目完了</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.06); padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,0.1);">
+          <div style="font-size:11px; color:#94a3b8;">事前課題達成率</div>
+          <div style="font-size:22px; font-weight:900; color:#38bdf8; margin-top:2px;">${taskPct}%</div>
+          <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">${doneTasks}/${totalTasks} 完了</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title"><span class="num">01</span>直近の確認・優先アクション</div>
+  `;
+
+  if (expiringSoon.length > 0) {
+    html += `
+      <div class="callout warning" style="margin-bottom:12px;">
+        ${icon('warn')}
+        <div style="flex:1;">
+          <div class="t">期限間近・期限切れの備蓄品 (${expiringSoon.length}件)</div>
+          <div class="d">${expiringSoon.map(s => `${escapeHtml(s.name)} (${s.expiry || '期限未定'})`).join(', ')}</div>
+          <button class="btn" style="margin-top:8px; font-size:11px; padding:4px 10px;" data-goto="stock">備蓄リストで確認</button>
+        </div>
+      </div>
+    `;
+  }
+
+  if (highPriorityTasks.length > 0) {
+    html += `
+      <div class="card tight" style="border-left:4px solid var(--red); margin-bottom:12px;">
+        <div style="font-weight:800; font-size:13px; color:var(--red); margin-bottom:6px;">⚠️ 優先度の高い未完了タスク</div>
+        ${highPriorityTasks.map(t => `
+          <div style="font-size:13px; font-weight:700; margin-bottom:4px;">・ ${escapeHtml(t.title)}</div>
+        `).join('')}
+        <button class="btn primary" style="margin-top:8px;" data-goto="tasks">タスク一覧へ</button>
+      </div>
+    `;
+  }
+
+  if (expiringSoon.length === 0 && highPriorityTasks.length === 0) {
+    html += `
+      <div class="card tight" style="padding:14px; text-align:center; color:var(--ink-soft); font-size:13px;">
+        現在、急を要する警告や高優先度タスクはありません。順調に準備が進んでいます！
+      </div>
+    `;
+  }
+
+  html += `<div class="section-title"><span class="num">02</span>指定避難所メモ</div>`;
+
+  if(state.evac.shelterName || state.evac.shelterAddress){
+    html += `<div class="card tight">
+      <div style="font-weight:800;font-size:14px;">${escapeHtml(state.evac.shelterName||'(名称未登録)')}</div>
+      <div style="font-size:12.5px;color:var(--ink-soft);margin-top:2px;">${escapeHtml(state.evac.shelterAddress||'住所未登録')}</div>
+      <button class="btn" style="margin-top:8px;" data-goto="evac">避難場所メモを見る</button>
+    </div>`;
+  }else{
+    html += `<div class="card tight empty" style="padding:16px;">
+      避難所がまだ登録されていません。<br>
+      <button class="btn primary" style="margin-top:8px;" data-goto="evac">避難場所を登録する</button>
+    </div>`;
+  }
+
+  html += `<div class="section-title"><span class="num">03</span>避難所開設情報</div>`;
+  html += `<div class="card" style="padding:14px;">
+    <div style="font-size:12.5px;color:var(--ink-soft);line-height:1.4;margin-bottom:12px;text-align:center;">
+      福岡市の現在の避難所開設状況や避難勧告等の最新情報を確認できます。
+    </div>
+    <a href="https://www.city.fukuoka.lg.jp/bousai/emevacuate.html" target="_blank" rel="noopener noreferrer" class="btn block" style="text-decoration:none;text-align:center;justify-content:center;padding:12px 16px;font-size:14px;font-weight:800;background:#e11d48;border-color:#e11d48;color:#ffffff;">
+      🚨 福岡市 避難所開設情報 (公式) ↗
+    </a>
+  </div>`;
+
+  html += `<div class="section-title"><span class="num">04</span>ハザードマップポータル</div>`;
+  html += `<div class="card" style="padding:14px;">
+    <div style="font-size:12px;color:var(--ink-soft);line-height:1.4;margin-bottom:12px;text-align:center;">
+      各種ハザードマップへの公式リンク集です。
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <a href="https://webmap.city.fukuoka.lg.jp/bousai/" target="_blank" rel="noopener noreferrer" class="btn primary block" style="text-decoration:none;text-align:center;justify-content:center;padding:14px 16px;font-size:14px;font-weight:800;">
+        総合ハザードマップ (公式) ↗
+      </a>
+      <a href="https://disaportal.gsi.go.jp/" target="_blank" rel="noopener noreferrer" class="btn block" style="text-decoration:none;text-align:center;justify-content:center;font-size:13px;font-weight:700;padding:14px 16px;background:var(--paper2);">
+        🗺️ 国土交通省 重ねるハザードマップ ↗
+      </a>
+    </div>
+  </div>`;
+
+  document.getElementById('content').innerHTML = html;
+  document.querySelectorAll('[data-goto]').forEach(b=>{
+    b.onclick = ()=>{ state.tab=b.dataset.goto; save(); renderAll(); };
+  });
+}
+
+const STOCK_FILTERS = [
+  {key:'all', label:'すべて'},
+  {key:'pending', label:'未準備のみ'},
+  {key:'soon', label:'期限間近(30日)'}
+];
+
+function renderStock(){
+  let items = state.stock.slice();
+
+  const catOrder = {};
+  state.categories.forEach((c, idx) => { catOrder[c.key] = idx; });
+  items.sort((a, b) => (catOrder[a.category] ?? 999) - (catOrder[b.category] ?? 999));
+
+  if(state.filter==='pending') items = items.filter(s=>!s.have);
+  else if(state.filter==='soon') items = items.filter(s=>isExpiringSoon(s.expiry));
+
+  if(state.filterCategory && state.filterCategory !== 'all') {
+    items = items.filter(s => s.category === state.filterCategory);
+  }
+
+  const total = state.stock.length;
+  const done = state.stock.filter(s=>s.have).length;
+  const soonOrExpired = state.stock.filter(s=>isExpiringSoon(s.expiry) || isExpired(s.expiry)).length;
+  const pct = total ? Math.round(done/total*100) : 0;
+
+  let html = `
+    <div class="card" style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:12px;color:var(--ink-soft)">備蓄完了ステータス</div>
+          <div style="font-size:18px;font-weight:900;margin-top:2px;">${done} / ${total} 品目準備OK ${soonOrExpired > 0 ? `<span style="color:var(--red);font-size:12px;margin-left:4px;">(期限切れ近接: ${soonOrExpired}件)</span>` : ''}</div>
+        </div>
+        <div style="font-size:24px;font-weight:900;color:${done===total&&total>0?'var(--teal)':'var(--ink-soft)'}">${pct}%</div>
+      </div>
+      <div class="progressbar" style="margin-top:8px;"><div class="fill" style="width:${pct}%"></div></div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;">
+        ${state.categories.map(c=>{
+          const catItems = state.stock.filter(s=>s.category===c.key);
+          const catDone = catItems.filter(s=>s.have).length;
+          if(!catItems.length) return '';
+          return `<span class="tag">${escapeHtml(c.label)} ${catDone}/${catItems.length}</span>`;
+        }).join('')}
+      </div>
+    </div>
+  `;
+
+  html += `<div class="filter-row">${STOCK_FILTERS.map(f=>`<button class="pill-btn ${state.filter===f.key?'active':''}" data-filter="${f.key}">${f.label}</button>`).join('')}</div>`;
+  
+  html += `<div class="filter-row" style="margin-top:-6px;">
+    <button class="pill-btn ${(state.filterCategory||'all')==='all'?'active':''}" data-cat-filter="all">全カテゴリー</button>
+    ${state.categories.map(c=>`<button class="pill-btn ${state.filterCategory===c.key?'active':''}" data-cat-filter="${c.key}">${escapeHtml(c.label)}</button>`).join('')}
+  </div>`;
+
+  html += `
+    <div class="btn-action-row">
+      <button class="btn-dashed-add" id="addStockBtn">＋ アイテムを追加</button>
+      <button class="btn-subtle-cat" id="manageCatBtn">カテゴリー管理</button>
+    </div>
+  `;
+
+  if(!items.length){
+    html += `<div class="empty">該当するアイテムがありません</div>`;
+  }
+
+  items.forEach(s=>{
+    const expired = isExpired(s.expiry);
+    const soon = isExpiringSoon(s.expiry);
+    const cls = expired||soon ? 'expiring' : (s.have?'done':'pending');
+    const expiryText = s.expiry ? `期限 ${s.expiry}` : '期限 未定';
+    html += `
+      <div class="stock-item ${cls}" data-id="${s.id}">
+        <div class="stock-head">
+          <div>
+            <div class="stock-name">${escapeHtml(s.name)}</div>
+            <div class="stock-tags">
+              <span class="tag">${getCategoryLabel(s.category)}</span>
+              <span class="tag ${soon||expired?'exp':''}">${expiryText}</span>
+            </div>
+            ${s.note?`<div style="font-size:11.5px;color:var(--ink-soft);margin-top:6px;">${escapeHtml(s.note)}</div>`:''}
+          </div>
+          <div class="toggle">
+            <input type="checkbox" class="haveToggle" ${s.have?'checked':''}>
+            <div class="track"></div><div class="knob"></div>
+          </div>
+        </div>
+        <div class="stock-meta">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <div style="font-size:12px;font-weight:700;color:var(--ink-soft);">必要数: <span style="font-family:var(--font-mono);color:var(--ink);">${s.need}</span></div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--ink-soft);">
+              <span>所持数:</span>
+              <span class="qty-val curVal">${s.cur}</span>
+              <div class="qty-stepper">
+                <button class="qtyMinus" aria-label="減らす">${icon('minus')}</button>
+                <button class="qtyPlus" aria-label="増やす">${icon('plus')}</button>
+              </div>
+            </div>
+          </div>
+          <div class="stock-actions">
+            <button class="icon-btn editBtn">${icon('list')}</button>
+            <button class="icon-btn delBtn">${icon('trash')}</button>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+
+  document.getElementById('content').innerHTML = html;
+
+  document.querySelectorAll('[data-filter]').forEach(b=>{
+    b.onclick = ()=>{ state.filter=b.dataset.filter; save(); renderStock(); };
+  });
+  document.querySelectorAll('[data-cat-filter]').forEach(b=>{
+    b.onclick = ()=>{ state.filterCategory=b.dataset.catFilter; save(); renderStock(); };
+  });
+  document.getElementById('addStockBtn').onclick = ()=> openStockForm(null);
+  document.getElementById('manageCatBtn').onclick = ()=> openCategoryManager();
+
+  document.querySelectorAll('.stock-item').forEach(node=>{
+    const id = node.dataset.id;
+    const item = state.stock.find(x=>x.id===id);
+    const haveToggle = node.querySelector('.haveToggle');
+    const curValEl = node.querySelector('.curVal');
+
+    haveToggle.onchange = e=>{ item.have=e.target.checked; save(); renderStock(); };
+
+    const updateQty = (newVal)=>{
+      item.cur = Math.max(0, newVal);
+      if(curValEl) curValEl.textContent = item.cur;
+      item.have = item.need > 0 && item.cur >= item.need;
+      if(haveToggle) haveToggle.checked = item.have;
+      if(item.have) node.classList.add('done'); else node.classList.remove('done');
+      save();
+    };
+
+    node.querySelector('.qtyPlus').onclick = ()=> updateQty(item.cur + 1);
+    node.querySelector('.qtyMinus').onclick = ()=> updateQty(item.cur - 1);
+    node.querySelector('.editBtn').onclick = ()=> openStockForm(item);
+    node.querySelector('.delBtn').onclick = ()=>{
+      showConfirmModal(`「${item.name}」を削除しますか？`, ()=>{
+        state.stock = state.stock.filter(x=>x.id!==id); save(); renderStock();
+      });
+    };
+  });
+}
+
+function openStockForm(item){
+  const isNew = !item;
+  const draft = item ? {...item} : {id:uid(), name:'', category:'human', have:false, need:1, cur:0, expiry:'', note:''};
+
+  const createQtyOptions = (selectedVal, max = 100) => {
+    let opts = '';
+    for (let i = 0; i <= max; i++) {
+      opts += `<option value="${i}" ${selectedVal === i ? 'selected' : ''}>${i}</option>`;
+    }
+    return opts;
+  };
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:50;display:flex;align-items:flex-end;justify-content:center;';
+  wrap.innerHTML = `
+    <div style="background:var(--paper);width:100%;max-width:520px;border-radius:16px 16px 0 0;padding:18px 16px 24px;max-height:88vh;overflow-y:auto;color:var(--ink);">
+      <div class="section-title" style="margin-top:0;">${isNew?'アイテムを追加':'アイテムを編集'}</div>
+      <div class="field"><label>アイテム名</label><input type="text" id="f_name" value="${escapeHtml(draft.name)}" placeholder="例: 保存水"></div>
+      <div class="field"><label>カテゴリ</label>
+        <select id="f_cat">
+          ${state.categories.map(c=>`<option value="${c.key}" ${draft.category===c.key?'selected':''}>${escapeHtml(c.label)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="row2">
+        <div class="field"><label>必要数</label>
+          <select id="f_need">${createQtyOptions(draft.need)}</select>
+        </div>
+        <div class="field"><label>現在の所持数</label>
+          <select id="f_cur">${createQtyOptions(draft.cur)}</select>
+        </div>
+      </div>
+      <div class="field"><label>賞味期限 / 消費期限</label><input type="date" id="f_exp" value="${draft.expiry}"></div>
+      <div class="field"><label>メモ / 保管場所</label><textarea id="f_note" placeholder="例: リビングクローゼット奥">${escapeHtml(draft.note)}</textarea></div>
+      <div style="display:flex;gap:8px;margin-top:6px;">
+        <button class="btn block" id="f_cancel">キャンセル</button>
+        <button class="btn primary block" id="f_save">保存する</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(wrap);
+  wrap.querySelector('#f_cancel').onclick = ()=> wrap.remove();
+  wrap.querySelector('#f_save').onclick = ()=>{
+    draft.name = wrap.querySelector('#f_name').value.trim() || '無題アイテム';
+    draft.category = wrap.querySelector('#f_cat').value;
+    draft.need = parseInt(wrap.querySelector('#f_need').value)||0;
+    draft.cur = parseInt(wrap.querySelector('#f_cur').value)||0;
+    draft.expiry = wrap.querySelector('#f_exp').value;
+    draft.note = wrap.querySelector('#f_note').value;
+    draft.have = draft.cur >= draft.need && draft.need>0 ? true : draft.have;
+    if(isNew) state.stock.push(draft);
+    else Object.assign(item, draft);
+    save(); wrap.remove(); renderStock();
+  };
+}
+
+function openCategoryManager(){
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:50;display:flex;align-items:flex-end;justify-content:center;';
+  
+  function renderContent(){
+    return `
+      <div style="background:var(--paper);width:100%;max-width:520px;border-radius:16px 16px 0 0;padding:18px 16px 24px;max-height:88vh;overflow-y:auto;color:var(--ink);">
+        <div class="section-title" style="margin-top:0;">カテゴリー管理</div>
+        <div style="margin-bottom:12px;">
+          ${state.categories.map((c,idx)=>`
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+              <input type="text" class="catInput" data-idx="${idx}" value="${escapeHtml(c.label)}" style="flex:1;padding:8px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--ink);">
+              <button class="btn danger delCatBtn" data-idx="${idx}" style="padding:6px 10px;">削除</button>
+            </div>
+          `).join('')}
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:14px;">
+          <input type="text" id="newCatName" placeholder="新しいカテゴリー名" style="flex:1;padding:8px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--ink);">
+          <button class="btn primary" id="addCatBtn">追加</button>
+        </div>
+        <button class="btn block primary" id="closeCatModal">完了</button>
+      </div>
+    `;
+  }
+  
+  wrap.innerHTML = renderContent();
+  document.body.appendChild(wrap);
+
+  function bindEvents(){
+    wrap.querySelectorAll('.catInput').forEach(inp=>{
+      inp.onchange = e=>{ state.categories[e.target.dataset.idx].label = e.target.value; save(); };
+    });
+    wrap.querySelectorAll('.delCatBtn').forEach(btn=>{
+      btn.onclick = ()=>{
+        const idx = parseInt(btn.dataset.idx);
+        state.categories.splice(idx, 1);
+        save();
+        wrap.innerHTML = renderContent();
+        bindEvents();
+      };
+    });
+    const addBtn = wrap.querySelector('#addCatBtn');
+    if(addBtn){
+      addBtn.onclick = ()=>{
+        const val = wrap.querySelector('#newCatName').value.trim();
+        if(val){
+          state.categories.push({key:uid(), label:val});
+          save();
+          wrap.innerHTML = renderContent();
+          bindEvents();
+        }
+      };
+    }
+    const closeBtn = wrap.querySelector('#closeCatModal');
+    if(closeBtn){
+      closeBtn.onclick = ()=>{ wrap.remove(); renderStock(); };
+    }
+  }
+  bindEvents();
+}
+
+function showConfirmModal(msg, onOk){
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:60;display:flex;align-items:center;justify-content:center;padding:16px;';
+  wrap.innerHTML = `
+    <div style="background:var(--card);border-radius:12px;padding:18px;max-width:360px;width:100%;border:1px solid var(--line);color:var(--ink);">
+      <div style="font-size:14px;font-weight:700;margin-bottom:14px;line-height:1.5;">${escapeHtml(msg)}</div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="btn" id="c_no">キャンセル</button>
+        <button class="btn danger" id="c_yes">削除する</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(wrap);
+  wrap.querySelector('#c_no').onclick = ()=> wrap.remove();
+  wrap.querySelector('#c_yes').onclick = ()=>{ wrap.remove(); onOk(); };
+}
+
+function renderAction(){
+  let html = `<div class="section-title"><span class="num">ACTION</span>🚨 震度7発生時のアクションプラン・チェックリスト</div>`;
+
+  state.phases.forEach((p, idx)=>{
+    const total = p.items.length * 2;
+    let checkedCount = 0;
+    p.items.forEach(item=>{
+      const chk = state.actionChecks[item.id] || {naoki:false, yumiko:false};
+      if(chk.naoki) checkedCount++;
+      if(chk.yumiko) checkedCount++;
+    });
+    const pct = total ? Math.round(checkedCount/total*100) : 0;
+
+    html += `
+      <div class="timeline-item" data-key="${p.key}">
+        <div class="timeline-axis">
+          <div class="timeline-dot"></div>
+          <div class="timeline-line"></div>
+        </div>
+        <div class="timeline-content">
+          <div class="timeline-title-row">
+            <div style="min-width:0;">
+              <div class="timeline-time">${escapeHtml(p.sub)}</div>
+              <div class="timeline-title" style="word-break:break-all;">${escapeHtml(p.title)}</div>
+            </div>
+            <button class="icon-btn phaseEditBtn" style="flex:none;">${icon('edit')}</button>
+          </div>
+          <div class="sub" style="margin-top:4px; font-size:12px; color:var(--ink-soft);">完了: ${checkedCount}/${total}</div>
+          <div class="progressbar" style="margin-bottom:12px;"><div class="fill" style="width:${pct}%"></div></div>
+
+          ${(p.warnings||[]).map((w, wi)=>`
+            <div class="callout ${w.type}" data-widx="${wi}">
+              ${icon(w.type==='danger'?'danger':'warn')}
+              <div style="flex:1;min-width:0;"><div class="t">${escapeHtml(w.title)}</div><div class="d">${escapeHtml(w.body)}</div></div>
+              <div style="display:flex;flex-direction:column;gap:4px;flex:none;">
+                <button class="icon-btn warnEditBtn">${icon('edit')}</button>
+                <button class="icon-btn warnDelBtn">${icon('trash')}</button>
+              </div>
+            </div>
+          `).join('')}
+          <button class="btn-subtle-cat addWarnBtn" style="margin-bottom:12px;">${icon('plus')} 注意事項を追加</button>
+
+          <div>
+            ${p.items.map(item=>{
+              const chk = state.actionChecks[item.id] || {naoki:false, yumiko:false};
+              return `
+                <div class="chk-item" data-item-id="${item.id}">
+                  <div class="chk-content">
+                    <div class="chk-text">${escapeHtml(item.text)}</div>
+                    <div class="chk-checks">
+                      <label class="user-chk">
+                        <input type="checkbox" class="actChkUser" data-id="${item.id}" data-user="naoki" ${chk.naoki?'checked':''}> Naoki
+                      </label>
+                      <label class="user-chk">
+                        <input type="checkbox" class="actChkUser" data-id="${item.id}" data-user="yumiko" ${chk.yumiko?'checked':''}> Yumiko
+                      </label>
+                    </div>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:4px;flex:none;">
+                    <button class="icon-btn itemEditBtn">${icon('edit')}</button>
+                    <button class="icon-btn itemDelBtn">${icon('trash')}</button>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+          <button class="btn-dashed-add addItemBtn" style="margin-bottom:12px; white-space: nowrap;">${icon('plus')} 手順を追加</button>
+        </div>
+      </div>
+    `;
+  });
+
+  document.getElementById('content').innerHTML = html;
+
+  document.querySelectorAll('.timeline-item').forEach(node=>{
+    const key = node.dataset.key;
+    const phase = state.phases.find(x=>x.key===key);
+
+    node.querySelector('.phaseEditBtn').onclick = ()=> openPhaseForm(phase);
+    node.querySelector('.addWarnBtn').onclick = ()=> openWarningForm(phase, null);
+    node.querySelector('.addItemBtn').onclick = ()=> openActionItemForm(phase, null);
+
+    node.querySelectorAll('.callout').forEach(cnode=>{
+      const wi = parseInt(cnode.dataset.widx);
+      const warning = phase.warnings[wi];
+      cnode.querySelector('.warnEditBtn').onclick = ()=> openWarningForm(phase, warning);
+      cnode.querySelector('.warnDelBtn').onclick = ()=>{
+        showConfirmModal(`「${warning.title}」を削除しますか？`, ()=>{
+          phase.warnings = phase.warnings.filter(w=>w!==warning);
+          save(); renderAction();
+        });
+      };
+    });
+
+    node.querySelectorAll('.chk-item').forEach(inode=>{
+      const id = inode.dataset.itemId;
+      const item = phase.items.find(x=>x.id===id);
+      inode.querySelector('.itemEditBtn').onclick = ()=> openActionItemForm(phase, item);
+      inode.querySelector('.itemDelBtn').onclick = ()=>{
+        showConfirmModal('この手順を削除しますか？', ()=>{
+          phase.items = phase.items.filter(x=>x.id!==id);
+          delete state.actionChecks[id];
+          save(); renderAction();
+        });
+      };
+    });
+  });
+
+  document.querySelectorAll('.actChkUser').forEach(chk=>{
+    chk.onchange = e=>{
+      const id = chk.dataset.id;
+      const user = chk.dataset.user;
+      if(!state.actionChecks[id]) state.actionChecks[id] = {naoki:false, yumiko:false};
+      state.actionChecks[id][user] = e.target.checked;
+      save(); renderAction();
+    };
+  });
+}
+
+function openPhaseForm(phase){
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:50;display:flex;align-items:flex-end;justify-content:center;';
+  wrap.innerHTML = `
+    <div style="background:var(--paper);width:100%;max-width:520px;border-radius:16px 16px 0 0;padding:18px 16px 24px;max-height:88vh;overflow-y:auto;color:var(--ink);">
+      <div class="section-title" style="margin-top:0;">タイミングの編集</div>
+      <div class="field"><label>タイトル</label><input type="text" id="p_title" value="${escapeHtml(phase.title)}"></div>
+      <div class="field"><label>時間の目安</label><input type="text" id="p_sub" value="${escapeHtml(phase.sub)}" placeholder="例: 発災直後の最優先行動"></div>
+      <div style="display:flex;gap:8px;margin-top:6px;">
+        <button class="btn block" id="p_cancel">キャンセル</button>
+        <button class="btn primary block" id="p_save">保存する</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(wrap);
+  wrap.querySelector('#p_cancel').onclick = ()=> wrap.remove();
+  wrap.querySelector('#p_save').onclick = ()=>{
+    phase.title = wrap.querySelector('#p_title').value.trim() || phase.title;
+    phase.sub = wrap.querySelector('#p_sub').value.trim();
+    save(); wrap.remove(); renderAction();
+  };
+}
+
+function openActionItemForm(phase, item){
+  const isNew = !item;
+  const draft = item ? {...item} : {id:uid(), text:''};
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:50;display:flex;align-items:flex-end;justify-content:center;';
+  wrap.innerHTML = `
+    <div style="background:var(--paper);width:100%;max-width:520px;border-radius:16px 16px 0 0;padding:18px 16px 24px;max-height:88vh;overflow-y:auto;color:var(--ink);">
+      <div class="section-title" style="margin-top:0;">${isNew?'手順を追加':'手順を編集'}</div>
+      <div class="field"><label>内容</label><textarea id="i_text" placeholder="例: 玄関ドアを開け、避難経路を確保する">${escapeHtml(draft.text)}</textarea></div>
+      <div style="display:flex;gap:8px;margin-top:6px;">
+        <button class="btn block" id="i_cancel">キャンセル</button>
+        <button class="btn primary block" id="i_save">${isNew?'追加する':'保存する'}</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(wrap);
+  wrap.querySelector('#i_cancel').onclick = ()=> wrap.remove();
+  wrap.querySelector('#i_save').onclick = ()=>{
+    const text = wrap.querySelector('#i_text').value.trim();
+    if(!text) return;
+    if(isNew){
+      phase.items.push({id:uid(), text});
+    } else {
+      item.text = text;
+    }
+    save(); wrap.remove(); renderAction();
+  };
+}
+
+function openWarningForm(phase, warning){
+  const isNew = !warning;
+  const draft = warning ? {...warning} : {type:'warning', title:'', body:''};
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:50;display:flex;align-items:flex-end;justify-content:center;';
+  wrap.innerHTML = `
+    <div style="background:var(--paper);width:100%;max-width:520px;border-radius:16px 16px 0 0;padding:18px 16px 24px;max-height:88vh;overflow-y:auto;color:var(--ink);">
+      <div class="section-title" style="margin-top:0;">${isNew?'注意事項を追加':'注意事項を編集'}</div>
+      <div class="field">
+        <label>種別</label>
+        <div class="filter-row" id="w_type_row" style="margin-bottom:0;">
+          <button type="button" class="pill-btn ${draft.type==='warning'?'active':''}" data-type="warning">注意</button>
+          <button type="button" class="pill-btn ${draft.type==='danger'?'active':''}" data-type="danger">警告</button>
+        </div>
+      </div>
+      <div class="field"><label>タイトル</label><input type="text" id="w_title" value="${escapeHtml(draft.title)}" placeholder="例: ガラス片に注意"></div>
+      <div class="field"><label>内容</label><textarea id="w_body" placeholder="詳細を入力">${escapeHtml(draft.body)}</textarea></div>
+      <div style="display:flex;gap:8px;margin-top:6px;">
+        <button class="btn block" id="w_cancel">キャンセル</button>
+        <button class="btn primary block" id="w_save">${isNew?'追加する':'保存する'}</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(wrap);
+
+  let selectedType = draft.type;
+  wrap.querySelectorAll('#w_type_row .pill-btn').forEach(btn=>{
+    btn.onclick = ()=>{
+      selectedType = btn.dataset.type;
+      wrap.querySelectorAll('#w_type_row .pill-btn').forEach(b=>b.classList.toggle('active', b===btn));
+    };
+  });
+
+  wrap.querySelector('#w_cancel').onclick = ()=> wrap.remove();
+  wrap.querySelector('#w_save').onclick = ()=>{
+    const title = wrap.querySelector('#w_title').value.trim();
+    const body = wrap.querySelector('#w_body').value.trim();
+    if(!title) return;
+    if(isNew){
+      if(!phase.warnings) phase.warnings = [];
+      phase.warnings.push({type:selectedType, title, body});
+    } else {
+      warning.type = selectedType;
+      warning.title = title;
+      warning.body = body;
+    }
+    save(); wrap.remove(); renderAction();
+  };
+}
+
+function renderEvac(){
+  const e = state.evac;
+  let html = `<div class="section-title"><span class="num">EVAC</span>避難場所・マップ</div>`;
+
+  html += `
+    <div class="card">
+      <div style="font-weight:800;font-size:15px;margin-bottom:6px;">第一選択：在宅避難</div>
+      <div style="font-size:12.5px;color:var(--ink-soft);line-height:1.5;">
+        マンションに構造的倒壊がない場合、自宅での滞在（在宅避難）を最優先とします。
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="font-weight:800;font-size:14px;margin-bottom:10px;">① 一次集合場所（近くの公園など）</div>
+      <div class="field"><label>名称</label><input type="text" id="ev_pName" value="${escapeHtml(e.primaryName)}" placeholder="例: 〇〇公園"></div>
+      <div class="field"><label>住所 / 目印</label><input type="text" id="ev_pAddr" value="${escapeHtml(e.primaryAddress)}" placeholder="例: 時計台の下"></div>
+      <div class="field"><label>集合ルールメモ</label><textarea id="ev_pRule" placeholder="例: 震度6以上で自動的にここに合流">${escapeHtml(e.primaryRule)}</textarea></div>
+    </div>
+
+    <div class="card">
+      <div style="font-weight:800;font-size:14px;margin-bottom:10px;">② 指定避難所（学校など）</div>
+      <div class="field"><label>避難所名</label><input type="text" id="ev_sName" value="${escapeHtml(e.shelterName)}" placeholder="例: 〇〇小学校"></div>
+      <div class="field"><label>住所</label><input type="text" id="ev_sAddr" value="${escapeHtml(e.shelterAddress)}" placeholder="例: 〇〇町1-2-3"></div>
+      <div class="field"><label>電話番号</label><input type="tel" id="ev_sTel" value="${escapeHtml(e.shelterTel)}" placeholder="例: 03-XXXX-XXXX"></div>
+      <div class="field"><label>ペット同行ルール</label><textarea id="ev_sPet" placeholder="例: ケージ必須、飼育場所は体育館外">${escapeHtml(e.shelterPetRule)}</textarea></div>
+    </div>
+
+    <div class="card">
+      <div style="font-weight:800;font-size:14px;margin-bottom:10px;">③ 避難ルート・道順メモ</div>
+      <div class="field"><textarea id="ev_route" placeholder="例: 狭い路地は通り危険。大通りの歩道を通る">${escapeHtml(e.routeText)}</textarea></div>
+      <div style="font-size:11px;font-weight:700;color:var(--ink-soft);margin-top:6px;">紙の防災マップ写真 / スクショ画像</div>
+      <div class="map-upload">
+        ${icon('cam')}
+        <div style="font-size:12px;font-weight:700;">タップして画像を選択・保存</div>
+        <input type="file" id="mapFileInput" accept="image/*">
+      </div>
+      ${e.mapImage ? `<img src="${e.mapImage}" class="map-preview">` : ''}
+    </div>
+
+    <button class="btn primary block" id="saveEvacBtn" style="margin-top:12px;">避難所情報を保存</button>
+  `;
+
+  document.getElementById('content').innerHTML = html;
+
+  document.getElementById('saveEvacBtn').onclick = ()=>{
+    state.evac.primaryName = document.getElementById('ev_pName').value;
+    state.evac.primaryAddress = document.getElementById('ev_pAddr').value;
+    state.evac.primaryRule = document.getElementById('ev_pRule').value;
+    state.evac.shelterName = document.getElementById('ev_sName').value;
+    state.evac.shelterAddress = document.getElementById('ev_sAddr').value;
+    state.evac.shelterTel = document.getElementById('ev_sTel').value;
+    state.evac.shelterPetRule = document.getElementById('ev_sPet').value;
+    state.evac.routeText = document.getElementById('ev_route').value;
+    save();
+    const b = document.getElementById('saveEvacBtn');
+    b.textContent = '保存しました！';
+    setTimeout(()=>b.textContent='避難所情報を保存', 1500);
+  };
+
+  document.getElementById('mapFileInput').onchange = e=>{
+    const file = e.target.files[0];
+    if(file){
+      const reader = new FileReader();
+      reader.onload = ev=>{
+        state.evac.mapImage = ev.target.result;
+        save(); renderEvac();
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+}
+
+function renderTasks(){
+  let html = `<div class="section-title"><span class="num">TASKS</span>防災課題・事前準備リスト</div>`;
+
+  html += `
+    <div class="btn-action-row">
+      <button class="btn-dashed-add" id="addTaskBtn">＋ 課題・準備項目を追加</button>
+    </div>
+  `;
+
+  if(!state.tasks.length){
+    html += `<div class="empty">登録されている課題はありません</div>`;
+  }
+
+  state.tasks.forEach(t=>{
+    const pr = t.priority || 'mid';
+    const prLabel = pr==='high' ? '優先度：高' : pr==='low' ? '優先度：低' : '優先度：中';
+    html += `
+      <div class="task-item ${t.done?'done':''}" data-id="${t.id}">
+        <div class="toggle" style="margin-top:2px;">
+          <input type="checkbox" class="taskToggle" ${t.done?'checked':''}>
+          <div class="track"></div><div class="knob"></div>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <div class="task-title">${escapeHtml(t.title)}</div>
+            <span class="tag priority-${pr}">${prLabel}</span>
+          </div>
+          ${t.desc?`<div class="task-desc">${escapeHtml(t.desc)}</div>`:''}
+          ${t.url?`<a href="${escapeHtml(t.url)}" target="_blank" rel="noopener noreferrer" class="task-url">${icon('link')}<span style="word-break:break-all;overflow-wrap:anywhere;">${escapeHtml(t.url)} ↗</span></a>`:''}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;flex-none;">
+          <button class="icon-btn taskEditBtn">${icon('edit')}</button>
+          <button class="icon-btn taskDelBtn">${icon('trash')}</button>
+        </div>
+      </div>
+    `;
+  });
+
+  document.getElementById('content').innerHTML = html;
+
+  document.getElementById('addTaskBtn').onclick = ()=> openTaskForm(null);
+
+  document.querySelectorAll('.task-item').forEach(node=>{
+    const id = node.dataset.id;
+    const task = state.tasks.find(x=>x.id===id);
+    const toggle = node.querySelector('.taskToggle');
+
+    toggle.onchange = e=>{
+      task.done = e.target.checked;
+      save(); renderTasks();
+    };
+
+    node.querySelector('.taskEditBtn').onclick = ()=> openTaskForm(task);
+
+    node.querySelector('.taskDelBtn').onclick = ()=>{
+      showConfirmModal(`「${task.title}」を削除しますか？`, ()=>{
+        state.tasks = state.tasks.filter(x=>x.id!==id);
+        save(); renderTasks();
+      });
+    };
+  });
+}
+
+function openTaskForm(task){
+  const isNew = !task;
+  const draft = task ? {...task} : {id:uid(), title:'', desc:'', url:'', done:false, priority:'mid'};
+  if(!draft.priority) draft.priority = 'mid';
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:50;display:flex;align-items:flex-end;justify-content:center;';
+  wrap.innerHTML = `
+    <div style="background:var(--paper);width:100%;max-width:520px;border-radius:16px 16px 0 0;padding:18px 16px 24px;max-height:88vh;overflow-y:auto;color:var(--ink);">
+      <div class="section-title" style="margin-top:0;">${isNew?'防災課題・事前準備を追加':'防災課題・事前準備を編集'}</div>
+      <div class="field"><label>タイトル</label><input type="text" id="t_title" value="${escapeHtml(draft.title)}" placeholder="例: 家具の固定"></div>
+      <div class="field"><label>詳細・メモ</label><textarea id="t_desc" placeholder="例: 寝室のタンスに耐震突っ張り棒をつける">${escapeHtml(draft.desc)}</textarea></div>
+      <div class="field"><label>関連URL（リンク）</label><input type="url" id="t_url" value="${escapeHtml(draft.url)}" placeholder="https://example.com"></div>
+      <div class="field">
+        <label>優先度</label>
+        <div class="filter-row" id="t_priority_row" style="margin-bottom:0;">
+          <button type="button" class="pill-btn ${draft.priority==='high'?'active':''}" data-priority="high">高</button>
+          <button type="button" class="pill-btn ${draft.priority==='mid'?'active':''}" data-priority="mid">中</button>
+          <button type="button" class="pill-btn ${draft.priority==='low'?'active':''}" data-priority="low">低</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:6px;">
+        <button class="btn block" id="t_cancel">キャンセル</button>
+        <button class="btn primary block" id="t_save">${isNew?'追加する':'保存する'}</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(wrap);
+
+  let selectedPriority = draft.priority;
+  wrap.querySelectorAll('#t_priority_row .pill-btn').forEach(btn=>{
+    btn.onclick = ()=>{
+      selectedPriority = btn.dataset.priority;
+      wrap.querySelectorAll('#t_priority_row .pill-btn').forEach(b=>b.classList.toggle('active', b===btn));
+    };
+  });
+
+  wrap.querySelector('#t_cancel').onclick = ()=> wrap.remove();
+  wrap.querySelector('#t_save').onclick = ()=>{
+    const title = wrap.querySelector('#t_title').value.trim();
+    const desc = wrap.querySelector('#t_desc').value;
+    const url = wrap.querySelector('#t_url').value.trim();
+    if(title){
+      if(isNew){
+        state.tasks.push({id:uid(), title, desc, url, done:false, priority:selectedPriority});
+      } else {
+        Object.assign(task, {title, desc, url, priority:selectedPriority});
+      }
+      save(); wrap.remove(); renderTasks();
+    }
+  };
+}
+
+function renderAll(){
+  renderTabbar();
+  if(state.tab==='home') renderHome();
+  else if(state.tab==='stock') renderStock();
+  else if(state.tab==='action') renderAction();
+  else if(state.tab==='evac') renderEvac();
+  else if(state.tab==='tasks') renderTasks();
+}
+
+window.renderAll = renderAll;
+</script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import {
+    getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import {
+    getFirestore, doc, setDoc, onSnapshot, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  // Firebase Configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyCFBybW0jJD2iPm0-x1FDhH5qbWFBFXeSE",
+    authDomain: "kakeibo-cea1a.firebaseapp.com",
+    projectId: "kakeibo-cea1a",
+    storageBucket: "kakeibo-cea1a.firebasestorage.app",
+    messagingSenderId: "629767950385",
+    appId: "1:629767950385:web:bef5465fe6e8bf721fc510",
+    measurementId: "G-458217LM1C"
+  };
+
+  // 許可されたGoogleアカウントのメールアドレス
+  const ALLOWED_EMAILS = [
+    "yumi0317mumu@gmail.com",
+    "yumi17march@gmail.com",
+    "piazzadikage@gmail.com"
+  ];
+
+  const fbApp = initializeApp(firebaseConfig);
+  const auth = getAuth(fbApp);
+  const provider = new GoogleAuthProvider();
+  const db = getFirestore(fbApp);
+
+  // 家族共有ドキュメント
+  const SHARED_DOC = doc(db, "bousai", "shared-data");
+  let pushTimer = null;
+  let rendered = false;
+
+  // save()関数の拡張（Firestoreリアルタイム書き込み）
+  const originalSave = window.save;
+  window.save = function(){
+    originalSave();
+    clearTimeout(pushTimer);
+    pushTimer = setTimeout(()=>{
+      const payload = Object.assign({}, window.state, {_updatedAt: serverTimestamp()});
+      setDoc(SHARED_DOC, payload).catch(err=>console.error('Firestore保存エラー', err));
+    }, 500);
+  };
+
+  function startFirestoreSync(){
+    onSnapshot(SHARED_DOC, (snap)=>{
+      if(snap.metadata.hasPendingWrites){
+        if(!rendered){ rendered = true; window.renderAll(); }
+        return;
+      }
+      if(snap.exists()){
+        const remote = snap.data();
+        delete remote._updatedAt;
+        window.state = Object.assign(defaultState(), remote);
+        try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(window.state)); }catch(e){}
+      } else {
+        const payload = Object.assign({}, window.state, {_updatedAt: serverTimestamp()});
+        setDoc(SHARED_DOC, payload).catch(err=>console.error('Firestore初期保存エラー', err));
+      }
+      rendered = true;
+      window.renderAll();
+    }, (err)=>{
+      console.error('Firestore同期エラー(オフラインの可能性)', err);
+      if(!rendered){ rendered = true; window.renderAll(); }
+    });
+  }
+
+  const authGate = document.getElementById('authGate');
+  const appWrap = document.getElementById('appWrap');
+  const authStatus = document.getElementById('authStatus');
+
+  document.getElementById('googleLoginBtn').onclick = () => {
+    signInWithPopup(auth, provider).catch(err => {
+      authStatus.textContent = 'ログインに失敗しました: ' + err.message;
+    });
+  };
+
+  let appStarted = false;
+
+  onAuthStateChanged(auth, (user) => {
+    if (user && ALLOWED_EMAILS.includes(user.email)) {
+      authGate.style.display = 'none';
+      appWrap.style.display = '';
+      if (!appStarted) {
+        appStarted = true;
+        startFirestoreSync();
+      }
+    } else if (user) {
+      authStatus.textContent = 'このメールアドレスは登録されていません: ' + user.email;
+      appWrap.style.display = 'none';
+      authGate.style.display = 'flex';
+      signOut(auth);
+    } else {
+      appWrap.style.display = 'none';
+      authGate.style.display = 'flex';
+      authStatus.textContent = 'サインインしてください';
+    }
+  });
+</script>
+</body>
+</html>
