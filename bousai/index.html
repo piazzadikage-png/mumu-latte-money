@@ -273,6 +273,29 @@ body.emergency .timeline-dot{border-color:var(--red);}
 .task-url svg{width:14px;height:14px;flex:none;margin-top:2px;}
 
 ::-webkit-scrollbar{width:0;height:0;}
+
+/* 数値ステッパー（フォーム内） */
+.num-stepper-wrap{
+  display:flex;align-items:center;gap:0;
+  border:1.5px solid var(--line);border-radius:8px;overflow:hidden;
+  background:var(--card);
+}
+.num-stepper-input{
+  flex:1;min-width:0;border:none;background:transparent;
+  color:var(--ink);font-size:15px;font-weight:700;
+  text-align:center;padding:8px 4px;outline:none;
+  -moz-appearance:textfield;
+}
+.num-stepper-input::-webkit-inner-spin-button,
+.num-stepper-input::-webkit-outer-spin-button{-webkit-appearance:none;}
+.num-step-btn{
+  flex:none;width:38px;height:38px;
+  background:var(--paper2);border:none;
+  color:var(--ink);font-size:18px;line-height:1;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:background .15s;user-select:none;
+}
+.num-step-btn:active{background:var(--line);}
 </style>
 </head>
 <body>
@@ -421,10 +444,11 @@ function defaultState(){
     ],
     actionChecks:{},
     evac:{
-      home:'マンション（在宅避難を優先）',
-      primaryName:'〇〇近隣公園', primaryAddress:'徒歩3分 / 集合ポイント', primaryRule:'火事がない限りまずはここに夫婦で合流',
-      shelterName:'〇〇小学校 Gymnasium', shelterAddress:'〇〇市〇〇町1-2-3', shelterTel:'03-0000-0000', shelterPetRule:'ペット同行避難可（ケージ要・受付で確認）',
-      routeText:'大通りを避け、崩落の恐れのあるブロック塀の横を通らないこと。', mapImage:null
+      mapImage:null,
+      shelters:[
+        {id:'ev1', name:'〇〇近隣公園', condition:'一次集合場所（火事がない限りまずはここへ）', address:'徒歩3分 / 集合ポイント', mapUrl:'', petOk:true, note:'夫婦でここに合流してから次を判断する'},
+        {id:'ev2', name:'〇〇小学校', condition:'指定避難所（マンションが危険な場合）', address:'〇〇市〇〇町1-2-3', mapUrl:'', petOk:true, note:'ペット同行可（ケージ要・受付で確認）'}
+      ]
     }
   };
 }
@@ -703,15 +727,19 @@ function openStockForm(item){
       </div>
       <div class="row2">
         <div class="field"><label>必要数</label>
-          <select id="f_need">
-            ${(()=>{
-              const opts = new Set([0,1,2,3,4,5,6,8,10,12,15,20,25,30]);
-              opts.add(draft.need);
-              return Array.from(opts).sort((a,b)=>a-b).map(n=>`<option value="${n}" ${draft.need===n?'selected':''}>${n}</option>`).join('');
-            })()}
-          </select>
+          <div class="num-stepper-wrap">
+            <button type="button" class="num-step-btn" id="f_need_minus" aria-label="減らす">&#8679;</button>
+            <input type="number" id="f_need" value="${draft.need}" min="0" class="num-stepper-input">
+            <button type="button" class="num-step-btn" id="f_need_plus" aria-label="増やす">&#8681;</button>
+          </div>
         </div>
-        <div class="field"><label>現在の所持数</label><input type="number" id="f_cur" value="${draft.cur}" min="0"></div>
+        <div class="field"><label>現在の所持数</label>
+          <div class="num-stepper-wrap">
+            <button type="button" class="num-step-btn" id="f_cur_minus" aria-label="減らす">&#8679;</button>
+            <input type="number" id="f_cur" value="${draft.cur}" min="0" class="num-stepper-input">
+            <button type="button" class="num-step-btn" id="f_cur_plus" aria-label="増やす">&#8681;</button>
+          </div>
+        </div>
       </div>
       <div class="field"><label>賞味期限 / 消費期限</label><input type="date" id="f_exp" value="${draft.expiry}"></div>
       <div class="field"><label>メモ / 保管場所</label><textarea id="f_note" placeholder="例: リビングクローゼット奥">${escapeHtml(draft.note)}</textarea></div>
@@ -722,11 +750,27 @@ function openStockForm(item){
     </div>
   `;
   document.body.appendChild(wrap);
+  // ステッパーヘルパー
+  function bindStepper(inputId, minusId, plusId, min=0){
+    const inp = wrap.querySelector('#'+inputId);
+    const getVal = ()=> Math.max(min, parseInt(inp.value)||0);
+    wrap.querySelector('#'+minusId).onclick = ()=>{ inp.value = Math.max(min, getVal()-1); };
+    wrap.querySelector('#'+plusId).onclick  = ()=>{ inp.value = getVal()+1; };
+    inp.addEventListener('keydown', e=>{
+      if(e.key==='ArrowUp'||e.key==='ArrowDown'){
+        e.preventDefault();
+        inp.value = e.key==='ArrowUp' ? getVal()+1 : Math.max(min, getVal()-1);
+      }
+    });
+  }
+  bindStepper('f_need','f_need_minus','f_need_plus');
+  bindStepper('f_cur','f_cur_minus','f_cur_plus');
+
   wrap.querySelector('#f_cancel').onclick = ()=> wrap.remove();
   wrap.querySelector('#f_save').onclick = ()=>{
     draft.name = wrap.querySelector('#f_name').value.trim() || '無題アイテム';
     draft.category = wrap.querySelector('#f_cat').value;
-    draft.need = parseInt(wrap.querySelector('#f_need').value)||0;
+    draft.need = Math.max(0, parseInt(wrap.querySelector('#f_need').value)||0);
     draft.cur = parseInt(wrap.querySelector('#f_cur').value)||0;
     draft.expiry = wrap.querySelector('#f_exp').value;
     draft.note = wrap.querySelector('#f_note').value;
@@ -1039,74 +1083,151 @@ function openWarningForm(phase, warning){
 }
 
 function renderEvac(){
-  const e = state.evac;
+  if(!state.evac.shelters) state.evac.shelters = [];
+  const shelters = state.evac.shelters;
+
   let html = `<div class="section-title"><span class="num">EVAC</span>避難場所・マップ</div>`;
 
   html += `
-    <div class="card">
+    <div class="card" style="margin-bottom:12px;">
       <div style="font-weight:800;font-size:15px;margin-bottom:6px;">第一選択：在宅避難</div>
       <div style="font-size:12.5px;color:var(--ink-soft);line-height:1.5;">
         マンションに構造的倒壊がない場合、自宅での滞在（在宅避難）を最優先とします。
       </div>
     </div>
-
-    <div class="card">
-      <div style="font-weight:800;font-size:14px;margin-bottom:10px;">① 一次集合場所（近くの公園など）</div>
-      <div class="field"><label>名称</label><input type="text" id="ev_pName" value="${escapeHtml(e.primaryName)}" placeholder="例: 〇〇公園"></div>
-      <div class="field"><label>住所 / 目印</label><input type="text" id="ev_pAddr" value="${escapeHtml(e.primaryAddress)}" placeholder="例: 時計台の下"></div>
-      <div class="field"><label>集合ルールメモ</label><textarea id="ev_pRule" placeholder="例: 震度6以上で自動的にここに合流">${escapeHtml(e.primaryRule)}</textarea></div>
+    <div class="btn-action-row">
+      <button class="btn-dashed-add" id="addShelterBtn">＋ 避難所を追加</button>
     </div>
+  `;
 
-    <div class="card">
-      <div style="font-weight:800;font-size:14px;margin-bottom:10px;">② 指定避難所（学校など）</div>
-      <div class="field"><label>避難所名</label><input type="text" id="ev_sName" value="${escapeHtml(e.shelterName)}" placeholder="例: 〇〇小学校"></div>
-      <div class="field"><label>住所</label><input type="text" id="ev_sAddr" value="${escapeHtml(e.shelterAddress)}" placeholder="例: 〇〇町1-2-3"></div>
-      <div class="field"><label>電話番号</label><input type="tel" id="ev_sTel" value="${escapeHtml(e.shelterTel)}" placeholder="例: 03-XXXX-XXXX"></div>
-      <div class="field"><label>ペット同行ルール</label><textarea id="ev_sPet" placeholder="例: ケージ必須、飼育場所は体育館外">${escapeHtml(e.shelterPetRule)}</textarea></div>
-    </div>
+  if(!shelters.length){
+    html += `<div class="empty">避難所が登録されていません</div>`;
+  }
 
-    <div class="card">
-      <div style="font-weight:800;font-size:14px;margin-bottom:10px;">③ 避難ルート・道順メモ</div>
-      <div class="field"><textarea id="ev_route" placeholder="例: 狭い路地は通り危険。大通りの歩道を通る">${escapeHtml(e.routeText)}</textarea></div>
-      <div style="font-size:11px;font-weight:700;color:var(--ink-soft);margin-top:6px;">紙の防災マップ写真 / スクショ画像</div>
+  shelters.forEach((s, idx)=>{
+    const petBadge = s.petOk
+      ? `<span class="tag" style="background:var(--teal);color:#fff;border-color:var(--teal);">🐾 ペット同行可</span>`
+      : `<span class="tag" style="background:var(--red);color:#fff;border-color:var(--red);">🚫 ペット不可</span>`;
+
+    html += `
+      <div class="card shelter-card" data-sid="${s.id}" style="margin-bottom:10px;">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px;">
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:11px;font-weight:700;color:var(--ink-soft);margin-bottom:2px;">
+              ${idx+1}番目の避難所
+            </div>
+            <div style="font-weight:800;font-size:16px;line-height:1.3;word-break:break-all;">${escapeHtml(s.name)||'（名称未設定）'}</div>
+            ${s.condition ? `<div style="font-size:12px;color:var(--ink-soft);margin-top:3px;line-height:1.4;">${escapeHtml(s.condition)}</div>` : ''}
+          </div>
+          <div style="display:flex;gap:4px;flex:none;">
+            <button class="icon-btn shelterEditBtn">${icon('edit')}</button>
+            <button class="icon-btn shelterDelBtn">${icon('trash')}</button>
+          </div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+          ${petBadge}
+        </div>
+        ${s.address ? `
+          <div style="display:flex;align-items:flex-start;gap:6px;font-size:12.5px;margin-bottom:5px;">
+            <span style="font-weight:700;color:var(--ink-soft);flex:none;">📍</span>
+            <span style="word-break:break-all;">${escapeHtml(s.address)}</span>
+          </div>` : ''}
+        ${s.mapUrl ? `
+          <a href="${escapeHtml(s.mapUrl)}" target="_blank" rel="noopener noreferrer" class="task-url" style="margin-bottom:5px;">
+            ${icon('link')}<span>Google MAPで開く ↗</span>
+          </a>` : ''}
+        ${s.note ? `
+          <div style="font-size:12px;color:var(--ink-soft);border-top:1px solid var(--line);padding-top:7px;margin-top:4px;line-height:1.5;">
+            📝 ${escapeHtml(s.note)}
+          </div>` : ''}
+      </div>
+    `;
+  });
+
+  html += `
+    <div class="card" style="margin-top:14px;">
+      <div style="font-weight:800;font-size:14px;margin-bottom:10px;">避難ルート・道順メモ</div>
       <div class="map-upload">
         ${icon('cam')}
-        <div style="font-size:12px;font-weight:700;">タップして画像を選択・保存</div>
+        <div style="font-size:12px;font-weight:700;">防災マップ写真 / スクショを追加</div>
         <input type="file" id="mapFileInput" accept="image/*">
       </div>
-      ${e.mapImage ? `<img src="${e.mapImage}" class="map-preview">` : ''}
+      ${state.evac.mapImage ? `<img src="${state.evac.mapImage}" class="map-preview">` : ''}
     </div>
-
-    <button class="btn primary block" id="saveEvacBtn" style="margin-top:12px;">避難所情報を保存</button>
   `;
 
   document.getElementById('content').innerHTML = html;
 
-  document.getElementById('saveEvacBtn').onclick = ()=>{
-    state.evac.primaryName = document.getElementById('ev_pName').value;
-    state.evac.primaryAddress = document.getElementById('ev_pAddr').value;
-    state.evac.primaryRule = document.getElementById('ev_pRule').value;
-    state.evac.shelterName = document.getElementById('ev_sName').value;
-    state.evac.shelterAddress = document.getElementById('ev_sAddr').value;
-    state.evac.shelterTel = document.getElementById('ev_sTel').value;
-    state.evac.shelterPetRule = document.getElementById('ev_sPet').value;
-    state.evac.routeText = document.getElementById('ev_route').value;
-    save();
-    const b = document.getElementById('saveEvacBtn');
-    b.textContent = '保存しました！';
-    setTimeout(()=>b.textContent='避難所情報を保存', 1500);
-  };
+  document.getElementById('addShelterBtn').onclick = ()=> openShelterForm(null);
+
+  document.querySelectorAll('.shelter-card').forEach(node=>{
+    const sid = node.dataset.sid;
+    const shelter = state.evac.shelters.find(x=>x.id===sid);
+    node.querySelector('.shelterEditBtn').onclick = ()=> openShelterForm(shelter);
+    node.querySelector('.shelterDelBtn').onclick = ()=>{
+      showConfirmModal(`「${shelter.name||'この避難所'}」を削除しますか？`, ()=>{
+        state.evac.shelters = state.evac.shelters.filter(x=>x.id!==sid);
+        save(); renderEvac();
+      });
+    };
+  });
 
   document.getElementById('mapFileInput').onchange = e=>{
     const file = e.target.files[0];
     if(file){
       const reader = new FileReader();
-      reader.onload = ev=>{
-        state.evac.mapImage = ev.target.result;
-        save(); renderEvac();
-      };
+      reader.onload = ev=>{ state.evac.mapImage = ev.target.result; save(); renderEvac(); };
       reader.readAsDataURL(file);
     }
+  };
+}
+
+function openShelterForm(shelter){
+  const isNew = !shelter;
+  const draft = shelter ? {...shelter} : {id:uid(), name:'', condition:'', address:'', mapUrl:'', petOk:false, note:''};
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:50;display:flex;align-items:flex-end;justify-content:center;';
+  wrap.innerHTML = `
+    <div style="background:var(--paper);width:100%;max-width:520px;border-radius:16px 16px 0 0;padding:18px 16px 28px;max-height:90vh;overflow-y:auto;color:var(--ink);">
+      <div class="section-title" style="margin-top:0;">${isNew?'避難所を追加':'避難所を編集'}</div>
+      <div class="field"><label>名称</label><input type="text" id="sh_name" value="${escapeHtml(draft.name)}" placeholder="例: 〇〇小学校"></div>
+      <div class="field"><label>条件・優先度メモ</label><input type="text" id="sh_cond" value="${escapeHtml(draft.condition)}" placeholder="例: 一次集合場所 / 在宅不可の場合に移動"></div>
+      <div class="field"><label>住所</label><input type="text" id="sh_addr" value="${escapeHtml(draft.address)}" placeholder="例: 〇〇市〇〇町1-2-3"></div>
+      <div class="field"><label>Google MAP URL</label><input type="url" id="sh_map" value="${escapeHtml(draft.mapUrl)}" placeholder="https://maps.google.com/..."></div>
+      <div class="field">
+        <label>ペット同行</label>
+        <div style="display:flex;gap:10px;margin-top:4px;">
+          <button type="button" class="pill-btn ${draft.petOk?'active':''}" id="pet_yes" style="flex:1;">🐾 同行可</button>
+          <button type="button" class="pill-btn ${!draft.petOk?'active':''}" id="pet_no" style="flex:1;">🚫 不可 / 不明</button>
+        </div>
+      </div>
+      <div class="field"><label>メモ</label><textarea id="sh_note" placeholder="例: ケージ必須。受付で確認。体育館裏のペットエリアへ">${escapeHtml(draft.note)}</textarea></div>
+      <div style="display:flex;gap:8px;margin-top:6px;">
+        <button class="btn block" id="sh_cancel">キャンセル</button>
+        <button class="btn primary block" id="sh_save">${isNew?'追加する':'保存する'}</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(wrap);
+
+  let petOk = draft.petOk;
+  const petYes = wrap.querySelector('#pet_yes');
+  const petNo  = wrap.querySelector('#pet_no');
+  petYes.onclick = ()=>{ petOk=true;  petYes.classList.add('active'); petNo.classList.remove('active'); };
+  petNo.onclick  = ()=>{ petOk=false; petNo.classList.add('active'); petYes.classList.remove('active'); };
+
+  wrap.querySelector('#sh_cancel').onclick = ()=> wrap.remove();
+  wrap.querySelector('#sh_save').onclick = ()=>{
+    draft.name      = wrap.querySelector('#sh_name').value.trim() || '無題の避難所';
+    draft.condition = wrap.querySelector('#sh_cond').value.trim();
+    draft.address   = wrap.querySelector('#sh_addr').value.trim();
+    draft.mapUrl    = wrap.querySelector('#sh_map').value.trim();
+    draft.petOk     = petOk;
+    draft.note      = wrap.querySelector('#sh_note').value.trim();
+    if(isNew) state.evac.shelters.push(draft);
+    else Object.assign(shelter, draft);
+    save(); wrap.remove(); renderEvac();
   };
 }
 
@@ -1275,10 +1396,6 @@ function renderAll(){
   let pushTimer = null;
   let rendered = false;
 
-  // 「今どの画面/フィルターを見ているか」は端末ごとの表示状態なので、
-  // Firestoreへは送らない・Firestoreから来たデータでも上書きしない
-  const LOCAL_ONLY_KEYS = ['tab', 'openPhase', 'filter'];
-
   // 既存の save()（localStorageへの保存）はそのまま使いつつ、
   // 呼び出されるたびにFirestoreへも書き込むよう拡張する
   const originalSave = window.save;
@@ -1287,7 +1404,6 @@ function renderAll(){
     clearTimeout(pushTimer);
     pushTimer = setTimeout(()=>{
       const payload = Object.assign({}, window.state, {_updatedAt: serverTimestamp()});
-      LOCAL_ONLY_KEYS.forEach(k=> delete payload[k]);
       setDoc(SHARED_DOC, payload).catch(err=>console.error('Firestore保存エラー', err));
     }, 500);
   };
@@ -1299,19 +1415,14 @@ function renderAll(){
         if(!rendered){ rendered = true; renderAll(); }
         return;
       }
-      // この端末で今選んでいる画面/フィルターは保持しておく
-      const keepLocal = {};
-      LOCAL_ONLY_KEYS.forEach(k=> keepLocal[k] = window.state ? window.state[k] : undefined);
-
       if(snap.exists()){
         const remote = snap.data();
         delete remote._updatedAt;
-        window.state = Object.assign(defaultState(), remote, keepLocal);
+        window.state = Object.assign(defaultState(), remote);
         try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(window.state)); }catch(e){}
       } else {
         // まだ共有データがない → 今の内容(自分の端末のデータ)を初回データとして送る
         const payload = Object.assign({}, window.state, {_updatedAt: serverTimestamp()});
-        LOCAL_ONLY_KEYS.forEach(k=> delete payload[k]);
         setDoc(SHARED_DOC, payload).catch(err=>console.error('Firestore初期保存エラー', err));
       }
       rendered = true;
