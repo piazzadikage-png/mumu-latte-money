@@ -1275,6 +1275,10 @@ function renderAll(){
   let pushTimer = null;
   let rendered = false;
 
+  // 「今どの画面/フィルターを見ているか」は端末ごとの表示状態なので、
+  // Firestoreへは送らない・Firestoreから来たデータでも上書きしない
+  const LOCAL_ONLY_KEYS = ['tab', 'openPhase', 'filter'];
+
   // 既存の save()（localStorageへの保存）はそのまま使いつつ、
   // 呼び出されるたびにFirestoreへも書き込むよう拡張する
   const originalSave = window.save;
@@ -1283,6 +1287,7 @@ function renderAll(){
     clearTimeout(pushTimer);
     pushTimer = setTimeout(()=>{
       const payload = Object.assign({}, window.state, {_updatedAt: serverTimestamp()});
+      LOCAL_ONLY_KEYS.forEach(k=> delete payload[k]);
       setDoc(SHARED_DOC, payload).catch(err=>console.error('Firestore保存エラー', err));
     }, 500);
   };
@@ -1294,14 +1299,19 @@ function renderAll(){
         if(!rendered){ rendered = true; renderAll(); }
         return;
       }
+      // この端末で今選んでいる画面/フィルターは保持しておく
+      const keepLocal = {};
+      LOCAL_ONLY_KEYS.forEach(k=> keepLocal[k] = window.state ? window.state[k] : undefined);
+
       if(snap.exists()){
         const remote = snap.data();
         delete remote._updatedAt;
-        window.state = Object.assign(defaultState(), remote);
+        window.state = Object.assign(defaultState(), remote, keepLocal);
         try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(window.state)); }catch(e){}
       } else {
         // まだ共有データがない → 今の内容(自分の端末のデータ)を初回データとして送る
         const payload = Object.assign({}, window.state, {_updatedAt: serverTimestamp()});
+        LOCAL_ONLY_KEYS.forEach(k=> delete payload[k]);
         setDoc(SHARED_DOC, payload).catch(err=>console.error('Firestore初期保存エラー', err));
       }
       rendered = true;
