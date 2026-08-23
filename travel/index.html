@@ -141,7 +141,16 @@ const fmt = (d) => {
 // ═══════════════════════════════════════
 let user  = null;
 let trips = [];
-// itemカテゴリーは trips[0] の categories.item を共通として使用（全旅行同期）
+// itemカテゴリーはlocalStorage + trips両方で管理
+const ITEM_CATS_KEY = 'travel_planner_item_cats';
+let localItemCats = null; // localStorageから読み込んだ値
+
+// localStorageから読み込み（同期・即時）
+try {
+  const stored = localStorage.getItem(ITEM_CATS_KEY);
+  if (stored) localItemCats = JSON.parse(stored);
+} catch(e) {}
+
 let selectedTripId = null;
 
 // 旅行一覧フォーム
@@ -178,20 +187,38 @@ function startListener() {
   unsub = onSnapshot(collection(db,"trips"), (snap) => {
     trips = snap.docs.map(d => ({...d.data(), id:d.id}))
       .sort((a,b) => (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
+    // localStorageにない場合はtripsから復元してlocalStorageに保存
+    if (!localItemCats) {
+      const fromTrips = trips.find(t => t.categories?.item)?.categories?.item;
+      if (fromTrips) {
+        localItemCats = fromTrips;
+        try { localStorage.setItem(ITEM_CATS_KEY, JSON.stringify(fromTrips)); } catch(e) {}
+      }
+    }
     render();
   });
 }
 
-// 共通itemカテゴリーを全旅行に一括保存
+// 共通itemカテゴリーを保存（localStorage + 全旅行Firestore）
 const saveItemCategories = async (newItemCats) => {
-  await Promise.all(trips.map(t =>
-    saveTrip({...t, categories: {...(t.categories||defaultCategories()), item: newItemCats}})
-  ));
+  // localStorageに即時保存（リロード後も復元できる）
+  localItemCats = newItemCats;
+  try { localStorage.setItem(ITEM_CATS_KEY, JSON.stringify(newItemCats)); } catch(e) {}
+  // 全旅行のFirestoreにも反映（tripsが読み込まれていれば）
+  if (trips.length > 0) {
+    await Promise.all(trips.map(t =>
+      saveTrip({...t, categories: {...(t.categories||defaultCategories()), item: newItemCats}})
+    ));
+  }
 };
 
-// 現在の共通itemカテゴリーを取得（全旅行で同一のはず）
-const getItemCats = () =>
-  (trips.find(t => t.categories?.item)?.categories?.item) || defaultCategories().item;
+// 現在の共通itemカテゴリーを取得
+// 優先順位: localStorage > trips[0] > defaultCategories
+const getItemCats = () => {
+  if (localItemCats) return localItemCats;
+  const fromTrips = trips.find(t => t.categories?.item)?.categories?.item;
+  return fromTrips || defaultCategories().item;
+};
 
 // ═══════════════════════════════════════
 // レンダリング
@@ -291,7 +318,7 @@ function listHTML() {
 }
 
 function bindList() {
-  document.getElementById("logoutBtn")?.addEventListener("click", ()=>signOut(auth));
+  document.getElementById("logoutBtn")?.addEventListener("click", ()=>{ localItemCats=null; try{localStorage.removeItem(ITEM_CATS_KEY);}catch(e){} signOut(auth); });
   document.getElementById("lf-open")?.addEventListener("click", ()=>{ listForm={name:"",dateFrom:"",dateTo:"",copyFrom:"",open:true}; render(); });
   document.getElementById("lf-cancel")?.addEventListener("click", ()=>{ listForm.open=false; render(); });
 
