@@ -645,7 +645,8 @@ function renderStock(){
               <div class="stock-tags">
                 <span class="tag ${soon||expired?'exp':''}">${expiryText}</span>
               </div>
-              ${s.note?`<div style="font-size:11.5px;color:var(--ink-soft);margin-top:6px;">${escapeHtml(s.note)}</div>`:''}
+              ${s.storage?`<div style="font-size:11.5px;color:var(--ink-soft);margin-top:6px;">📦 ${escapeHtml(s.storage)}</div>`:''}
+              ${s.note?`<div style="font-size:11.5px;color:var(--ink-soft);margin-top:2px;">📝 ${escapeHtml(s.note)}</div>`:''}
             </div>
             <div class="toggle">
               <input type="checkbox" class="haveToggle" ${s.have?'checked':''}>
@@ -654,7 +655,14 @@ function renderStock(){
           </div>
           <div class="stock-meta">
             <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-              <div style="font-size:12px;font-weight:700;color:var(--ink-soft);">必要数: <span style="font-family:var(--font-mono);color:var(--ink);">${s.need}</span></div>
+              <div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--ink-soft);">
+                <span>必要数:</span>
+                <span class="qty-val needVal">${s.need}</span>
+                <div class="qty-stepper">
+                  <button class="needMinus" aria-label="必要数を減らす">${icon('minus')}</button>
+                  <button class="needPlus" aria-label="必要数を増やす">${icon('plus')}</button>
+                </div>
+              </div>
               <div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--ink-soft);">
                 <span>所持数:</span>
                 <span class="qty-val curVal">${s.cur}</span>
@@ -699,6 +707,17 @@ function renderStock(){
       save();
     };
 
+    const needValEl = node.querySelector('.needVal');
+    const updateNeed = (newVal)=>{
+      item.need = Math.max(0, newVal);
+      if(needValEl) needValEl.textContent = item.need;
+      item.have = item.need > 0 && item.cur >= item.need;
+      if(haveToggle) haveToggle.checked = item.have;
+      if(item.have) node.classList.add('done'); else node.classList.remove('done');
+      save();
+    };
+    node.querySelector('.needPlus').onclick = ()=> updateNeed(item.need + 1);
+    node.querySelector('.needMinus').onclick = ()=> updateNeed(item.need - 1);
     node.querySelector('.qtyPlus').onclick = ()=> updateQty(item.cur + 1);
     node.querySelector('.qtyMinus').onclick = ()=> updateQty(item.cur - 1);
     node.querySelector('.editBtn').onclick = ()=> openStockForm(item);
@@ -712,7 +731,7 @@ function renderStock(){
 
 function openStockForm(item){
   const isNew = !item;
-  const draft = item ? {...item} : {id:uid(), name:'', category:'human', have:false, need:1, cur:0, expiry:'', note:''};
+  const draft = item ? {...item} : {id:uid(), name:'', category:'human', have:false, need:1, cur:0, expiry:'', storage:'', note:''};
 
   const wrap = document.createElement('div');
   wrap.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:50;display:flex;align-items:flex-end;justify-content:center;';
@@ -742,7 +761,8 @@ function openStockForm(item){
         </div>
       </div>
       <div class="field"><label>賞味期限 / 消費期限</label><input type="date" id="f_exp" value="${draft.expiry}"></div>
-      <div class="field"><label>メモ / 保管場所</label><textarea id="f_note" placeholder="例: リビングクローゼット奥">${escapeHtml(draft.note)}</textarea></div>
+      <div class="field"><label>保管場所</label><input type="text" id="f_storage" value="${escapeHtml(draft.storage||'')}" placeholder="例: リビングクローゼット奥"></div>
+      <div class="field"><label>メモ</label><textarea id="f_note" placeholder="例: 満充電を常時維持">${escapeHtml(draft.note)}</textarea></div>
       <div style="display:flex;gap:8px;margin-top:6px;">
         <button class="btn block" id="f_cancel">キャンセル</button>
         <button class="btn primary block" id="f_save">保存する</button>
@@ -773,6 +793,7 @@ function openStockForm(item){
     draft.need = Math.max(0, parseInt(wrap.querySelector('#f_need').value)||0);
     draft.cur = parseInt(wrap.querySelector('#f_cur').value)||0;
     draft.expiry = wrap.querySelector('#f_exp').value;
+    draft.storage = wrap.querySelector('#f_storage').value.trim();
     draft.note = wrap.querySelector('#f_note').value;
     draft.have = draft.cur >= draft.need && draft.need>0 ? true : draft.have;
     if(isNew) state.stock.push(draft);
