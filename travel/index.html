@@ -173,17 +173,28 @@ onAuthStateChanged(auth, (u) => {
 });
 
 let unsub = null;
+let tripsReady = false, catsReady = false;
+function maybeRender() {
+  if (tripsReady && catsReady) render();
+}
 function startListener() {
   if (unsub) return;
   unsub = onSnapshot(collection(db,"trips"), (snap) => {
     trips = snap.docs.map(d => ({...d.data(), id:d.id}))
       .sort((a,b) => (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
-    render();
+    tripsReady = true;
+    maybeRender();
   });
   // 共通カテゴリーのリスナー
   onSnapshot(doc(db,"settings","categories"), (snap) => {
-    if (snap.exists()) sharedCategories = snap.data();
-    render();
+    if (snap.exists()) {
+      sharedCategories = snap.data();
+    } else {
+      // ドキュメント未作成の場合はデフォルトカテゴリーで初期化
+      sharedCategories = { item: defaultCategories().item };
+    }
+    catsReady = true;
+    maybeRender();
   });
 }
 
@@ -1022,7 +1033,7 @@ function bindDetail(trip) {
       sharedCategories = {...(sharedCategories||{}), item: newCats}; // ローカル即時反映
       detail.showCatMgr = true;
       render(); // すぐUI更新
-      saveSharedCategories(sharedCategories); // バックグラウンドで保存
+      await saveSharedCategories(sharedCategories); // 保存完了を待つ
     } else {
       const updated = {...categories, todo:[...cats,nc]};
       await update({categories: updated});
