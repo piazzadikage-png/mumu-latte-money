@@ -182,42 +182,60 @@ onAuthStateChanged(auth, (u) => {
 });
 
 let unsub = null;
+let pendingItemCatsSync = false; // Firestore未反映フラグ
+
 function startListener() {
   if (unsub) return;
   unsub = onSnapshot(collection(db,"trips"), (snap) => {
     trips = snap.docs.map(d => ({...d.data(), id:d.id}))
       .sort((a,b) => (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
-    // localStorageにない場合はtripsから復元してlocalStorageに保存
-    if (!localItemCats) {
-      const fromTrips = trips.find(t => t.categories?.item)?.categories?.item;
-      if (fromTrips) {
-        localItemCats = fromTrips;
-        try { localStorage.setItem(ITEM_CATS_KEY, JSON.stringify(fromTrips)); } catch(e) {}
+
+    if (trips.length > 0) {
+      if (pendingItemCatsSync && localItemCats) {
+        // カテゴリー変更がFirestore未反映のまま → 今すぐ全旅行に書き込む
+        pendingItemCatsSync = false;
+        Promise.all(trips.map(t =>
+          saveTrip({...t, categories: {...(t.categories||defaultCategories()), item: localItemCats}})
+        ));
+      } else if (!localItemCats) {
+        // localStorageにない場合（他端末など）はtripsの中で最新のカテゴリーを復元
+        const allItemCats = trips.map(t => t.categories?.item).filter(Boolean);
+        if (allItemCats.length > 0) {
+          const best = allItemCats.reduce((b, c) => c.length >= b.length ? c : b);
+          localItemCats = best;
+          try { localStorage.setItem(ITEM_CATS_KEY, JSON.stringify(best)); } catch(e) {}
+        }
       }
     }
     render();
   });
 }
 
-// 共通itemカテゴリーを保存（localStorage + 全旅行Firestore）
+// 共通itemカテゴリーを保存（localStorage即時 + Firestore全旅行）
 const saveItemCategories = async (newItemCats) => {
-  // localStorageに即時保存（リロード後も復元できる）
   localItemCats = newItemCats;
   try { localStorage.setItem(ITEM_CATS_KEY, JSON.stringify(newItemCats)); } catch(e) {}
-  // 全旅行のFirestoreにも反映（tripsが読み込まれていれば）
   if (trips.length > 0) {
+    // tripsが読み込み済みなら即Firestore反映
     await Promise.all(trips.map(t =>
       saveTrip({...t, categories: {...(t.categories||defaultCategories()), item: newItemCats}})
     ));
+  } else {
+    // tripsがまだ空ならフラグを立てておく（onSnapshot発火時に反映）
+    pendingItemCatsSync = true;
   }
 };
 
 // 現在の共通itemカテゴリーを取得
-// 優先順位: localStorage > trips[0] > defaultCategories
+// 優先順位: localStorage > trips内で最もカテゴリー数が多いもの > defaultCategories
 const getItemCats = () => {
   if (localItemCats) return localItemCats;
-  const fromTrips = trips.find(t => t.categories?.item)?.categories?.item;
-  return fromTrips || defaultCategories().item;
+  // 全旅行のcategories.itemの中で最もカテゴリー数が多いものを採用（最新のカスタマイズを反映）
+  const allItemCats = trips.map(t => t.categories?.item).filter(Boolean);
+  if (allItemCats.length > 0) {
+    return allItemCats.reduce((best, cur) => cur.length >= best.length ? cur : best);
+  }
+  return defaultCategories().item;
 };
 
 // ═══════════════════════════════════════
