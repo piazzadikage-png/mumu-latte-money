@@ -746,17 +746,19 @@ function openStockForm(item){
       </div>
       <div class="row2">
         <div class="field"><label>必要数</label>
-          <div class="num-stepper-wrap">
-            <button type="button" class="num-step-btn" id="f_need_minus" aria-label="減らす">&#8679;</button>
-            <input type="number" id="f_need" value="${draft.need}" min="0" class="num-stepper-input">
-            <button type="button" class="num-step-btn" id="f_need_plus" aria-label="増やす">&#8681;</button>
+          <div class="qty-stepper" style="gap:8px;">
+            <button type="button" class="qty-stepper button" id="f_need_minus" aria-label="減らす" style="width:36px;height:36px;border-radius:8px;border:1px solid var(--line);background:var(--paper);font-size:16px;font-weight:800;color:var(--ink);display:flex;align-items:center;justify-content:center;">${icon('minus')}</button>
+            <span id="f_need_val" class="qty-val" style="min-width:36px;font-size:17px;">${draft.need}</span>
+            <input type="hidden" id="f_need" value="${draft.need}">
+            <button type="button" class="qty-stepper button" id="f_need_plus" aria-label="増やす" style="width:36px;height:36px;border-radius:8px;border:1px solid var(--line);background:var(--paper);font-size:16px;font-weight:800;color:var(--ink);display:flex;align-items:center;justify-content:center;">${icon('plus')}</button>
           </div>
         </div>
         <div class="field"><label>現在の所持数</label>
-          <div class="num-stepper-wrap">
-            <button type="button" class="num-step-btn" id="f_cur_minus" aria-label="減らす">&#8679;</button>
-            <input type="number" id="f_cur" value="${draft.cur}" min="0" class="num-stepper-input">
-            <button type="button" class="num-step-btn" id="f_cur_plus" aria-label="増やす">&#8681;</button>
+          <div class="qty-stepper" style="gap:8px;">
+            <button type="button" class="qty-stepper button" id="f_cur_minus" aria-label="減らす" style="width:36px;height:36px;border-radius:8px;border:1px solid var(--line);background:var(--paper);font-size:16px;font-weight:800;color:var(--ink);display:flex;align-items:center;justify-content:center;">${icon('minus')}</button>
+            <span id="f_cur_val" class="qty-val" style="min-width:36px;font-size:17px;">${draft.cur}</span>
+            <input type="hidden" id="f_cur" value="${draft.cur}">
+            <button type="button" class="qty-stepper button" id="f_cur_plus" aria-label="増やす" style="width:36px;height:36px;border-radius:8px;border:1px solid var(--line);background:var(--paper);font-size:16px;font-weight:800;color:var(--ink);display:flex;align-items:center;justify-content:center;">${icon('plus')}</button>
           </div>
         </div>
       </div>
@@ -770,21 +772,17 @@ function openStockForm(item){
     </div>
   `;
   document.body.appendChild(wrap);
-  // ステッパーヘルパー
-  function bindStepper(inputId, minusId, plusId, min=0){
+  // ステッパーヘルパー（qty-stepperスタイル）
+  function bindStepper(inputId, valId, minusId, plusId, min=0){
     const inp = wrap.querySelector('#'+inputId);
+    const valEl = wrap.querySelector('#'+valId);
     const getVal = ()=> Math.max(min, parseInt(inp.value)||0);
-    wrap.querySelector('#'+minusId).onclick = ()=>{ inp.value = Math.max(min, getVal()-1); };
-    wrap.querySelector('#'+plusId).onclick  = ()=>{ inp.value = getVal()+1; };
-    inp.addEventListener('keydown', e=>{
-      if(e.key==='ArrowUp'||e.key==='ArrowDown'){
-        e.preventDefault();
-        inp.value = e.key==='ArrowUp' ? getVal()+1 : Math.max(min, getVal()-1);
-      }
-    });
+    const setVal = (v)=>{ inp.value = v; if(valEl) valEl.textContent = v; };
+    wrap.querySelector('#'+minusId).onclick = ()=>{ setVal(Math.max(min, getVal()-1)); };
+    wrap.querySelector('#'+plusId).onclick  = ()=>{ setVal(getVal()+1); };
   }
-  bindStepper('f_need','f_need_minus','f_need_plus');
-  bindStepper('f_cur','f_cur_minus','f_cur_plus');
+  bindStepper('f_need','f_need_val','f_need_minus','f_need_plus');
+  bindStepper('f_cur','f_cur_val','f_cur_minus','f_cur_plus');
 
   wrap.querySelector('#f_cancel').onclick = ()=> wrap.remove();
   wrap.querySelector('#f_save').onclick = ()=>{
