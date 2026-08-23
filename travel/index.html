@@ -512,7 +512,7 @@ function detailHTML(trip) {
         <div style="max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">
           ${filtered.length===0?'<div style="text-align:center;padding:16px;color:#4a6080;font-size:13px;">見つかりません</div>':
           filtered.map(i=>{
-            const cat=(trip.categories||defaultCategories()).item.find(c=>c.id===i.category);
+            const cat=(sharedCategories?.item||(trip.categories||defaultCategories()).item).find(c=>c.id===i.category);
             return `<div class="ex-item" data-text="${esc(i.text)}" data-catid="${i.category}" data-member="${i.member}" data-qty="${i.qty||1}" data-own="${i.ownership||'owned'}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.08);cursor:pointer;">
               <div class="ex-check" style="width:20px;height:20px;border-radius:6px;border:2px solid rgba(255,255,255,0.2);flex-shrink:0;display:flex;align-items:center;justify-content:center;"></div>
               <div style="flex:1;min-width:0;">
@@ -699,7 +699,7 @@ function detailHTML(trip) {
       const cards = data.map(({c,total,done})=>makeCatCard(c,total,done,total-done)).join("");
       return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">${cards}</div>`;
     } else {
-      const allCats = (trip.categories||defaultCategories()).item;
+      const allCats = sharedCategories?.item || (trip.categories||defaultCategories()).item;
       const data = allCats.map(c => {
         const total  = items.filter(i=>i.category===c.id).length;
         const packed = items.filter(i=>i.category===c.id&&i.packed).length;
