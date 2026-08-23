@@ -141,7 +141,7 @@ const fmt = (d) => {
 // ═══════════════════════════════════════
 let user  = null;
 let trips = [];
-let sharedCategories = null; // 全旅行共通のPackingListカテゴリー
+// itemカテゴリーは trips[0] の categories.item を共通として使用（全旅行同期）
 let selectedTripId = null;
 
 // 旅行一覧フォーム
@@ -173,33 +173,25 @@ onAuthStateChanged(auth, (u) => {
 });
 
 let unsub = null;
-let tripsReady = false, catsReady = false;
-function maybeRender() {
-  if (tripsReady && catsReady) render();
-}
 function startListener() {
   if (unsub) return;
   unsub = onSnapshot(collection(db,"trips"), (snap) => {
     trips = snap.docs.map(d => ({...d.data(), id:d.id}))
       .sort((a,b) => (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
-    tripsReady = true;
-    maybeRender();
-  });
-  // 共通カテゴリーのリスナー
-  onSnapshot(doc(db,"settings","categories"), (snap) => {
-    if (snap.exists()) {
-      sharedCategories = snap.data();
-    } else {
-      // ドキュメント未作成の場合はデフォルトカテゴリーで初期化
-      sharedCategories = { item: defaultCategories().item };
-    }
-    catsReady = true;
-    maybeRender();
+    render();
   });
 }
 
-// 共通カテゴリーを保存
-const saveSharedCategories = (cats) => setDoc(doc(db,"settings","categories"), cats);
+// 共通itemカテゴリーを全旅行に一括保存
+const saveItemCategories = async (newItemCats) => {
+  await Promise.all(trips.map(t =>
+    saveTrip({...t, categories: {...(t.categories||defaultCategories()), item: newItemCats}})
+  ));
+};
+
+// 現在の共通itemカテゴリーを取得（全旅行で同一のはず）
+const getItemCats = () =>
+  (trips.find(t => t.categories?.item)?.categories?.item) || defaultCategories().item;
 
 // ═══════════════════════════════════════
 // レンダリング
@@ -325,7 +317,8 @@ function bindList() {
         createdAt: serverTimestamp(),
       });
     } else {
-      await saveTrip({id, name, dateFrom, dateTo, categories:defaultCategories(), todos:[], items:[], createdAt:serverTimestamp()});
+      const initCats = {...defaultCategories(), item: getItemCats()};
+      await saveTrip({id, name, dateFrom, dateTo, categories:initCats, todos:[], items:[], createdAt:serverTimestamp()});
     }
     listForm = {name:"",dateFrom:"",dateTo:"",copyFrom:"",open:false};
     render();
@@ -449,7 +442,7 @@ function bindList() {
 // ═══════════════════════════════════════
 function detailHTML(trip) {
   const todos = trip.todos||[], items = trip.items||[];
-  const itemCats = sharedCategories?.item || (trip.categories||defaultCategories()).item;
+  const itemCats = getItemCats();
   const cats  = detail.tab==="item" ? itemCats : (trip.categories||defaultCategories()).todo;
   const getCat = id => cats.find(c=>c.id===id)||{label:id,color:"#888"};
   const getMem = id => MEMBERS.find(m=>m.id===id)||MEMBERS[0];
@@ -523,7 +516,7 @@ function detailHTML(trip) {
         <div style="max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">
           ${filtered.length===0?'<div style="text-align:center;padding:16px;color:#4a6080;font-size:13px;">見つかりません</div>':
           filtered.map(i=>{
-            const cat=(sharedCategories?.item||(trip.categories||defaultCategories()).item).find(c=>c.id===i.category);
+            const cat=getItemCats().find(c=>c.id===i.category);
             return `<div class="ex-item" data-text="${esc(i.text)}" data-catid="${i.category}" data-member="${i.member}" data-qty="${i.qty||1}" data-own="${i.ownership||'owned'}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.08);cursor:pointer;">
               <div class="ex-check" style="width:20px;height:20px;border-radius:6px;border:2px solid rgba(255,255,255,0.2);flex-shrink:0;display:flex;align-items:center;justify-content:center;"></div>
               <div style="flex:1;min-width:0;">
@@ -710,7 +703,7 @@ function detailHTML(trip) {
       const cards = data.map(({c,total,done})=>makeCatCard(c,total,done,total-done)).join("");
       return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">${cards}</div>`;
     } else {
-      const allCats = sharedCategories?.item || (trip.categories||defaultCategories()).item;
+      const allCats = getItemCats();
       const data = allCats.map(c => {
         const total  = items.filter(i=>i.category===c.id).length;
         const packed = items.filter(i=>i.category===c.id&&i.packed).length;
@@ -783,7 +776,7 @@ function detailHTML(trip) {
 
 function bindDetail(trip) {
   const todos = trip.todos||[], items = trip.items||[];
-  const itemCats = sharedCategories?.item || (trip.categories||defaultCategories()).item;
+  const itemCats = getItemCats();
   const cats  = detail.tab==="item" ? itemCats : (trip.categories||defaultCategories()).todo;
   const categories = {...(trip.categories||defaultCategories()), item: itemCats};
 
@@ -981,9 +974,8 @@ function bindDetail(trip) {
       const [moved] = reordered.splice(fromIdx,1);
       reordered.splice(toIdx,0,moved);
       if (detail.tab==="item") {
-        sharedCategories = {...(sharedCategories||{}), item:reordered};
         detail.showCatMgr=true; render();
-        saveSharedCategories(sharedCategories);
+        await saveItemCategories(reordered);
       } else {
         await update({categories:{...categories, todo:reordered}});
         detail.showCatMgr=true; render();
@@ -1016,7 +1008,7 @@ function bindDetail(trip) {
       const fromIdx=cats.findIndex(c=>c.id===touchCatDragId), toIdx=cats.findIndex(c=>c.id===targetId);
       if(fromIdx<0||toIdx<0){touchCatDragId=null;return;}
       const reordered=[...cats]; const [moved]=reordered.splice(fromIdx,1); reordered.splice(toIdx,0,moved);
-      if(detail.tab==="item"){sharedCategories={...(sharedCategories||{}),item:reordered};detail.showCatMgr=true;render();saveSharedCategories(sharedCategories);}
+      if(detail.tab==="item"){detail.showCatMgr=true;render();await saveItemCategories(reordered);}
       else{await update({categories:{...categories,todo:reordered}});detail.showCatMgr=true;render();}
       touchCatDragId=null;
     });
@@ -1030,10 +1022,9 @@ function bindDetail(trip) {
     const nc = {id:`cat_${uid()}`,label,color:COLORS[cats.length%COLORS.length]};
     if (detail.tab==="item") {
       const newCats = [...cats, nc];
-      sharedCategories = {...(sharedCategories||{}), item: newCats}; // ローカル即時反映
       detail.showCatMgr = true;
-      render(); // すぐUI更新
-      await saveSharedCategories(sharedCategories); // 保存完了を待つ
+      render();
+      await saveItemCategories(newCats);
     } else {
       const updated = {...categories, todo:[...cats,nc]};
       await update({categories: updated});
@@ -1045,10 +1036,9 @@ function bindDetail(trip) {
     el.addEventListener("click", async ()=>{
       const filtered = cats.filter(c=>c.id!==el.dataset.catid);
       if (detail.tab==="item") {
-        sharedCategories = {...(sharedCategories||{}), item: filtered};
         detail.showCatMgr = true;
         render();
-        saveSharedCategories(sharedCategories);
+        await saveItemCategories(filtered);
       } else {
         await update({categories:{...categories, todo:filtered}});
         detail.showCatMgr = true;
@@ -1102,9 +1092,8 @@ function bindDetail(trip) {
         if (!newLabel) return;
         const updated = cats.map(c=>c.id===catId?{...c,label:newLabel,color:selectedColor}:c);
         if (detail.tab==="item") {
-          sharedCategories = {...(sharedCategories||{}), item:updated};
           detail.showCatMgr=true; render();
-          saveSharedCategories(sharedCategories);
+          await saveItemCategories(updated);
         } else {
           await update({categories:{...categories, todo:updated}});
           detail.showCatMgr=true; render();
