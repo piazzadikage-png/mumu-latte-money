@@ -152,7 +152,7 @@ let detail = {
   tab: "todo",
   showForm: false, showCatMgr: false, showTripEdit: false,
   editId: null,
-  filterMember: "all_members", filterCat: "all", filterOwnership: "all",
+  filterMember: "all_members", filterCat: "all", filterOwnership: "all", filterPacked: "all",
   newName:"", newDateFrom:"", newDateTo:"",   // 旅行名編集用
   form: { text:"", category:"", member:"naoki", note:"", qty:1, ownership:"owned" },
   catLabel: "",
@@ -337,7 +337,7 @@ function bindList() {
       if (!t) return;
       selectedTripId = id;
       detail = { tab:"todo", showForm:false, showCatMgr:false, showTripEdit:false, editId:null,
-        filterMember:"all_members", filterCat:"all", filterOwnership:"all",
+        filterMember:"all_members", filterCat:"all", filterOwnership:"all", filterPacked:"all",
         newName:t.name, newDateFrom:t.dateFrom||"", newDateTo:t.dateTo||"",
         form:{text:"",category:"",member:"naoki",note:"",qty:1,ownership:"owned",dueDate:"",bookDate:"",brand:"",url:"",price:""},
         catLabel:"", itemMode:"new", existingSearch:"", saving:false };
@@ -464,7 +464,8 @@ function detailHTML(trip) {
   const fitems = items.filter(i=>
     (detail.filterMember==="all_members"||i.member===detail.filterMember)&&
     (detail.filterCat==="all"||i.category===detail.filterCat)&&
-    (detail.filterOwnership==="all"||i.ownership===detail.filterOwnership))
+    (detail.filterOwnership==="all"||i.ownership===detail.filterOwnership)&&
+    (detail.filterPacked==="all"||(detail.filterPacked==="unpacked"&&!i.packed)))
     .sort((a,b)=>(catOrder[a.category]??99)-(catOrder[b.category]??99));
 
   // 旅行名編集フォーム
@@ -764,7 +765,7 @@ function detailHTML(trip) {
       })()}
       <div style="display:flex;gap:8px;margin-bottom:14px;">
         <div class="field" style="flex:1;"><label>対象者</label><select id="fil-member"><option value="all_members"${detail.filterMember==="all_members"?" selected":""}>全員</option>${MEMBERS.map(m=>`<option value="${m.id}"${m.id===detail.filterMember?" selected":""}>${m.label}</option>`).join("")}</select></div>
-        ${detail.tab==="item"?`<div class="field" style="flex:1;"><label>購入状況</label><select id="fil-ownership"><option value="all"${detail.filterOwnership==="all"?" selected":""}>すべて</option><option value="owned"${detail.filterOwnership==="owned"?" selected":""}>持っている</option><option value="buy"${detail.filterOwnership==="buy"?" selected":""}>購入が必要</option></select></div>`:""}
+        ${detail.tab==="item"?`<div class="field" style="flex:1;"><label>チェック状況</label><select id="fil-packed"><option value="all"${detail.filterPacked==="all"?" selected":""}>すべて</option><option value="unpacked"${detail.filterPacked==="unpacked"?" selected":""}>未チェックのみ</option></select></div>`:""}
       </div>
       ${makeDashboard()}
       ${!detail.showCatMgr?`
@@ -796,6 +797,7 @@ function bindDetail(trip) {
   document.getElementById("tab-item")?.addEventListener("click", ()=>{ detail.tab="item"; detail.filterCat="all"; detail.showForm=false; detail.showCatMgr=false; render(); });
   document.getElementById("fil-member")?.addEventListener("change", e=>{ detail.filterMember=e.target.value; render(); });
   document.getElementById("fil-ownership")?.addEventListener("change", e=>{ detail.filterOwnership=e.target.value; render(); });
+  document.getElementById("fil-packed")?.addEventListener("change", e=>{ detail.filterPacked=e.target.value; render(); });
   document.querySelectorAll(".cat-card").forEach(el=>{
     el.addEventListener("click", ()=>{ detail.filterCat=detail.filterCat===el.dataset.catid?"all":el.dataset.catid; render(); });
   });
